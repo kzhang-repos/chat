@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+    <body>
+        <form id = "welcome"></form>
+
+        <p><u>active users</u></p>
+        <div id = "users"></div>
+
+        <p><u>people you recently chatted with</u></p>
+        <div id = 'chatters'></div>
+
+        <ul id="messages" style="width: 200px; height: 150px; overflow: auto;"></ul>
+        <div id = 'read_status'></div>
+
+        <form id = 'typing_status' action=""></form>
+
+        <form id = 'conversation' action="">
+            message: <input id = "msg" type = 'text' autocomplete = "off" />
+            <button>Send</button>
+        </form>
+
+        <script src = "https://cdn.socket.io/socket.io-1.2.0.js"></script>
+        <script src = "http://code.jquery.com/jquery-1.11.1.js"></script>
+        <script type = "text/javascript" src = "/io_client" ></script>
+
+</body>
+</html>
