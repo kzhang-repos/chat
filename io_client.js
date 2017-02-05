@@ -4,6 +4,7 @@ var people_to_chat = '';
 var people_to_chat_socket;
 var usernames;
 var last_chat_sender;
+var messages_count = 0;
 
 
 var out = $("#messages");
@@ -54,22 +55,29 @@ $(document).on('click', '.buttons', function(){
      $(this).css('font-weight', 'bold');
     people_to_chat = $(this).val();
     people_to_chat_id = usernames[people_to_chat];
-    socket.emit('friend name', people_to_chat);
+    socket.emit('get chat history', {offset: messages_count, name: people_to_chat, pagination: false});
     return false;
 });
 
-//show chat history with the chosen user
+//show chat history with the chosen user or after scrolling to top
 
 socket.on('chat history', function(data) {
-    $.each(data, function(key, value) {
-        $('#messages').append($('<li>').text(value.sender + ': ' + value.msg));
+    entries = data.entries;
+    $.each(entries, function(key, value) {
+        $('.inner').prepend($('<li>').text(value.sender + ': ' + value.msg + ' (' + value.time + ')'));
+
+        messages_count++;//pagination offset;
+
+        $("#messages").scrollTop($("#messages")[0].scrollHeight);//keep scrollbar at bottom 
     });
     //get own read status or update the other person's read status
-    var last_chatter = data[data.length - 1].sender;
-    if (last_chatter === my_username) {
-        socket.emit('get read status', {sender: my_username, receiver: people_to_chat});
-    } else {
-        socket.emit('save read status', {sender: people_to_chat, receiver: my_username, read: 'read'})
+    if (data.pagination === false) {
+        var last_chatter = entries[entries.length - 1].sender;
+        if (last_chatter === my_username) {
+            socket.emit('get read status', {sender: my_username, receiver: people_to_chat});
+        } else {
+            socket.emit('save read status', {sender: people_to_chat, receiver: my_username, read: 'read'})
+        }
     }
 });
 
@@ -90,7 +98,12 @@ $('#conversation').submit(function(){
 });
 
 socket.on('chat message', function(data){
-    $('#messages').append($('<li>').text(data.username + ': ' + data.msg));
+
+    $('.inner').append($('<li>').text(data.username + ': ' + data.msg + ' (' + data.time + ')'));
+
+    messages_count++;//pagination offset;
+
+    $("#messages").scrollTop($("#messages")[0].scrollHeight);//keep scrollbar at bottom;
 
     //read notification
 
@@ -113,6 +126,15 @@ socket.on('chat message', function(data){
          socket.emit('save read status', {sender: my_username, receiver: people_to_chat, read: $('#read_status').val()});
     } else {
         $('#read_status').empty();
+    }
+});
+
+//pagination
+
+$("#messages").scroll(function() {
+    var div = $(this);
+    if (div.scrollTop() == 0) {
+        socket.emit('get chat history', {offset: messages_count, name: people_to_chat, pagination: true});
     }
 });
 

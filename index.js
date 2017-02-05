@@ -151,37 +151,21 @@ io.sockets.on('connection', function(socket){
 
    //get chat history for person chosen
 
-   socket.on('friend name', function(friend_name) {
-       
+   socket.on('get chat history', function(data) {
+       var pagination = data.pagination;
+
        //get chat history for this channel
        db.Conversation.findAll({
             limit: 10,
+            offset: data.offset,
             where: {$or: [{
                 sender: socket.username,
-                receiver: friend_name
+                receiver: data.name
             }, {receiver: socket.username,
-            sender: friend_name}]},
+            sender: data.name}]},
             order: [['createdAt', 'DESC']]
         }).then(function(entries) {
-            return entries.reverse();
-        }).then(function(entries) {
-            socket.emit('chat history', entries);
-        }, function(err) {
-            console.log(err);
-        });
-
-        db.Conversation.findAll({
-            limit: 10,
-            where: {$or: [{
-                sender: socket.username,
-                receiver: friend_name
-            }, {receiver: socket.username,
-            sender: friend_name}]},
-            order: [['createdAt', 'DESC']]
-        }).then(function(entries) {
-            return entries.reverse();
-        }).then(function(entries) {
-            socket.emit('chat history', entries);
+            socket.emit('chat history', {entries: entries, pagination: pagination});
         }, function(err) {
             console.log(err);
         });
@@ -203,13 +187,19 @@ io.sockets.on('connection', function(socket){
    //save chat received
 
    socket.on('chat message', function(data) {
-       io.to(data.socket).to(socket.id).emit('chat message', {username: socket.username, msg: data.msg});
+        var date = new Date();
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var time = hours + ':' + minutes;
+
+       io.to(data.socket).to(socket.id).emit('chat message', {username: socket.username, msg: data.msg, time: time});
 
        db.Conversation.create({
            msg: data.msg,
            sender: socket.username,
-           receiver: data.name
-       }).then(function() {}, function(err) {
+           receiver: data.name,
+           time: time
+       }).then(function(message) {}, function(err) {
            console.log(err);
        });
    });
