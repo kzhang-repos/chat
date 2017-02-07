@@ -6,15 +6,13 @@
         <p><u>active users</u></p>
         <div id = "users"></div>
 
-        <p><u>people you recently chatted with</u></p>
-        <div id = 'chatters'></div>
+        <div id = "chatBox"> 
+        </div>
+        
+        <br>
+        <div id = 'readStatus'></div>
 
-        <ul id="messages" style="width: 200px; height: 150px; overflow: auto;">
-            <div class = inner></div>   
-        </ul>
-        <div id = 'read_status'></div>
-
-        <form id = 'typing_status' action=""></form>
+        <form id = 'typingStatus' action=""></form>
 
         <form id = 'conversation' action="">
             message: <input id = "msg" type = 'text' autocomplete = "off" />
@@ -23,7 +21,7 @@
 
         <script src = "https://cdn.socket.io/socket.io-1.2.0.js"></script>
         <script src = "http://code.jquery.com/jquery-1.11.1.js"></script>
-        <script type = "text/javascript" src = "/io_client" ></script>
+        <script type = "text/javascript" src = "/ioClient" ></script>
 
 </body>
 </html>
