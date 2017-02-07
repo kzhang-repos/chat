@@ -22,8 +22,8 @@ db.User.hasMany(db.Message);
 db.Message.belongsTo(db.Channel);
 db.Channel.hasMany(db.Message);
 
-db.User.belongsToMany(db.Channel, {though: 'UserChannel'});
-db.Channel.belongsToMany(db.User, {though: 'UserChannel'});
+db.User.belongsToMany(db.Channel, {through: 'UserChannel'});
+db.Channel.belongsToMany(db.User, {through: 'UserChannel'});
 
 module.exports = db;
 

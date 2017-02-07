@@ -1,8 +1,38 @@
-function Router (deps) {
+function Router(deps) {
     this.db = deps.db;
+    this.app = deps.app;
+
+    this.routing();
 };
 
-Router.prototpye.register = function register(req, res) {
+Router.prototype.routing = function routing() {
+    var self = this;
+
+    self.app.get('/register', self.register.bind(self));
+    self.app.post('/reg', self.reg.bind(self));
+    self.app.get('/login', self.login.bind(self));
+    self.app.post('/auth', self.auth.bind(self));
+    self.app.get('/logout', self.requireLogin.bind(self), self.logout.bind(self));
+    self.app.get('/', self.requireLogin.bind(self), self.io.bind(self));
+};
+
+Router.prototype.requireLogin = function requireLogin(req, res, next) {
+    var self = this;
+
+    if (req.session && req.session.username) {
+        self.db.User.findOne({
+            where: {username: req.session.username}
+        }).then(function(user) {
+            return next();
+        }, function(err) {
+            return res.json('unauthorized access');
+        });
+    } else {
+        return res.json('unauthorized access');
+    }
+};
+
+Router.prototype.register = function register(req, res) {
     res.sendFile(__dirname + '/public/register.html');
 };
 
@@ -31,6 +61,8 @@ Router.prototype.login = function reg(req, res) {
 };
 
 Router.prototype.auth = function auth(req, res) {
+    var self = this;
+
     self.db.User.findOne({
         where: {username: req.body.username}
     }).then(function(user){
@@ -41,7 +73,7 @@ Router.prototype.auth = function auth(req, res) {
                 if (err) res.json('wrong password');
                 else {
                     req.session.username = user.username;
-                    res.redirect('/');
+                    res.redirect('/chat');
                 }
             })
         }
@@ -52,17 +84,15 @@ Router.prototype.auth = function auth(req, res) {
 
 //log out
 
-Router.prototype.login = function login(req, res) {
+Router.prototype.logout = function logout(req, res) {
     req.session.destroy();
     res.json('you have been logged out');
 };
 
-//get io connection page
+//get io page
 
 Router.prototype.io = function io(req, res) {
     res.sendFile(__dirname + '/public/index.html');
 };
 
-Router.prototype.ioClient = function ioClient(req, res) {
-    res.sendFile(__dirname + '/public/ioClient.js');
-};
+module.exports = Router;

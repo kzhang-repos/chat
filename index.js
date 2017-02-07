@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var db = require('./db.js');
@@ -12,51 +13,23 @@ app.use(bodyParser);
 app.use(cookieParser);
 app.use(sessionMiddleware);
 
+io.use(function(socket, next) {
+    sessionMiddleware(socket.request, socket.request.res, next);
+});
+
 var deps = {};
 deps.db = db;
 deps.io = io;
-
-//session middleware
-
-io.use(function(socket, next) {
-    sessionMiddleware(socket.request, socket.request.res, next);
-})
-
-var requireLogin = function(req, res, next) {
-    if (req.session && req.session.username) {
-        db.User.findOne({
-            where: {username: req.session.username}
-        }).then(function(user) {
-            return next();
-        }, function(err) {
-            return res.json('unauthorized access');
-        });
-    } else {
-        return res.json('unauthorized access');
-    }
-};
+deps.app = app;
 
 var Router = require('./router.js');
-var router = new Router();
+var router = new Router(deps);
 
-app.get('/register', router.register.bind(router));
-app.post('/reg', router.reg.bind(router));
-app.get('/login', router.login.bind(router));
-app.post('/auth', router.auth.bind(router));
-app.get('/logout', requireLogin, router.logout.bind(router));
-app.get('/', requireLogin, router.io.bind(router));
-app.get('/ioclient', requireLogin, router.ioClient.bind(router));
-
-//io connection
-
-var Engine = require('/engine/engine.js');
+var Engine = require('./engine/engine.js');
 var engine = new Engine(deps);
 
-var usernames = {};
+app.use(express.static('./public'));
 
-io.sockets.on('connection', function(socket){});
-
-//sync databases and establish connection
 db.sequelize.sync().then(function() {
     console.log('db connected')
     http.listen(3000, function(){

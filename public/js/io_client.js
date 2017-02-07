@@ -1,11 +1,11 @@
 function App(deps) {
-    this.myUsername = null;
-    this.myId = null;
+    this.username = null;
+    this.id = null;
     this.friendId = null;
     this.friendUsername = null;
-    this.usernames = null;
     this.channel = null;
     this.messagesCount = null;
+    this.usernames = [];
 
     this.socket = deps.socket;
 };
@@ -15,7 +15,7 @@ App.prototype.setup = function() {
     this.attachSocket();
 }
 
-App.prototype.setupUi = function() {
+App.prototype.setupUI = function() {
     var self = this;
 
     //keep scrollbar at bottom
@@ -29,18 +29,18 @@ App.prototype.setupUi = function() {
 
     $(document).on('click', '.buttons', function(){
 
-        var chosenId = $(this).attr('id');
+        var chosenId = parseInt($(this).attr('id'));
         var chosenUsername = $(this).html();
 
         //you cannot chat with yourself
 
-        if (chosenId !== self.myId) {
+        if (chosenId !== self.id) {
             $('#chatBox').append('<ul id="messages" style="width: 200px; height: 150px; overflow: auto;"><div class = inner></div></ul>');
             
             //bold the name of the friend chosen
             $(this).css('font-weight', 'bold');
 
-            self.friendId = chosenId;
+            self.friendId = parseInt(chosenId);
             self.friendUsername = chosenUsername;
 
             //get chat history with the chosen friend
@@ -68,13 +68,13 @@ App.prototype.setupUi = function() {
 
     //show friend whether you are typing (if friend is still online)
 
-    if (self.usernames[self.friendId]) {
+    if (self.usernames.indexOf(self.friendUsername) !== -1) {
         var timeouts = {};
         time = 2000;
         $('#conversation input').keyup(function(){
-            var receiver = self.friendSocket;
+            var receiver = self.friendUsername;
             if (receiver in timeouts) clearTimeout(timeouts[receiver]); 
-            else self.socket.emit("typing", {socket: receiver, username: self.friendUsername});
+            else self.socket.emit("typing", rerceiver);
             
             timeouts[receiver] = setTimeout(function() {
                 self.socket.emit("doneTyping", receiver);
@@ -101,16 +101,18 @@ App.prototype.attachSocket = function attachSocket() {
 //new user connection notification
 
 App.prototype.onConnect = function onConnect(socket) {
-    self.socket.emit('adduser', {});
+    var self = this;
+    
+    self.socket.emit('addUser', {});
 };
 
 //save my username
 
-App.prototype.onStoreUsernameId = function onStoreUsername(data) {
+App.prototype.onStoreUsername = function onStoreUsername(data) {
     var self = this;
 
-    self.myUsername = data.username;
-    $('#welcome').append('<b>Welcome ' + username + '</b>');
+    self.username = data.username;
+    $('#welcome').append('<b>Welcome ' + self.username + '</b>');
 };
 
 //update active users everytime a new connection is established
@@ -118,9 +120,7 @@ App.prototype.onStoreUsernameId = function onStoreUsername(data) {
 App.prototype.onUpdateUsers = function onUpdateUsers(data) {
     var self = this;
 
-    self.socket.emit('saveUsernames', data);
-
-    self.usernames = Object.keys(data);
+    self.usernames = data;
 
     //check if the person you message is online and change message read/sent status accordingly
     $('#users').empty();
@@ -141,11 +141,11 @@ App.prototype.onSaveChannel = function onSaveChannel(data) {
 
 //show chat history with the chosen user or after scrolling to top
 
-App.prototype.onChatHistory = function onChatHistory(data, socket) {
+App.prototype.onChatHistory = function onChatHistory(data) {
     var self = this;
 
     $.each(data.messages, function(key, value) {
-        $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + value.time + ')'));
+        $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + value.time.substring(5, 16) + ')'));
 
         self.messagesCount++;//increase pagination offset;
 
@@ -155,12 +155,12 @@ App.prototype.onChatHistory = function onChatHistory(data, socket) {
     //if you sent the last message show whether it is read or update the other person's chat to 'read'
     if (data.pagination === false) {
         var lastMessage = data[data.length - 1];
-        if (lastMessage.UserId === self.myId) {
+        if (lastMessage.UserId === self.id) {
             $('#readStatus').empty();
             $('#readStatus').append(lastMessage.read);
             $('#readStatus').val(lastMessage.read);
         } else {
-            self.socket.emit('saveReadStatus', {id: data.id, read: 'read'})
+            self.socket.emit('saveReadStatus', {id: lastMessage.id, read: 'read'})
         }
     }
 };
@@ -180,7 +180,7 @@ App.prototype.onChatMessage = function onChatMessage(data) {
 
     $('#readStatus').empty();
     
-    if (data.username === self.myUsername) {
+    if (data.username === self.username) {
         if (self.usernames.indexOf(self.friendUsername) === -1) {
             if (!$('#readStatus').val()) {
                 $('#readStatus').empty();
@@ -206,17 +206,15 @@ App.prototype.onShowTyping = function onShowTyping(username) {
     $('#typingStatus').append(username + ' is typing ...');
 };
 
-App.prototype.onShowDoneTyping = function onShowDoneTyping () {
+App.prototype.onShowDoneTyping = function onShowDoneTyping() {
     $('#typingStatus').empty();
 };
 
 //disconnect
 
-App.prototype.onDisconnect = function onDisconnect () {
+App.prototype.onDisconnect = function onDisconnect() {
     $('#messages').append($('<li>').text(msg));
 };
-
-module.exports = App;
 
 var app = new App({
     socket: io()
