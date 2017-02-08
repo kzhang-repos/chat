@@ -19,6 +19,9 @@ App.prototype.setup = function() {
 App.prototype.setupUI = function() {
     var self = this;
 
+    // hide messagebox
+    $('#messages').hide();
+
     //keep scrollbar at bottom
 
     var out = $("#messages");
@@ -28,7 +31,8 @@ App.prototype.setupUI = function() {
 
     //choose who to chat with
 
-    $(document).on('click', '.buttons', function(){
+    $(document).one('click', '.buttons', function(){
+        $('#messages').show();//unhide message box
 
         var chosenUsername = $(this).html();
         var chosenId = self.usernameToUserId[chosenUsername];
@@ -36,8 +40,6 @@ App.prototype.setupUI = function() {
         //you cannot chat with yourself
 
         if (chosenId !== self.id) {
-            $('#chatBox').append('<ul id="messages" style="width: 200px; height: 150px; overflow: auto;"><div class = inner></div></ul>');
-            
             //bold the name of the friend chosen
             $(this).css('font-weight', 'bold');
 
@@ -68,27 +70,24 @@ App.prototype.setupUI = function() {
     });
 
     //show friend whether you are typing (if friend is still online)
-
-    if (self.usernames.indexOf(self.friendUsername) !== -1) {
-        var timeouts = {};
-        time = 2000;
-        $('#conversation input').keyup(function(){
-            var receiver = self.friendUsername;
-            if (receiver in timeouts) clearTimeout(timeouts[receiver]); 
-            else self.socket.emit("typing", rerceiver);
-            
-            timeouts[receiver] = setTimeout(function() {
-                self.socket.emit("doneTyping", receiver);
-                delete timeouts[receiver];
-            }, time);
-        });
-    };
+    
+    var timeouts = {};
+    time = 2000;
+    $('#conversation input').keyup(function(){
+        var receiver = self.friendUsername;
+        if (receiver in timeouts) clearTimeout(timeouts[receiver]); 
+        else self.socket.emit("typing", receiver);
+        
+        timeouts[receiver] = setTimeout(function() {
+            self.socket.emit("doneTyping", receiver);
+            delete timeouts[receiver];
+        }, time);
+    });
 };
 
 App.prototype.attachSocket = function attachSocket() {
     var self = this;
 
-    self.socket.on('connect', self.onConnect.bind(self));
     self.socket.on('storeUsername', self.onStoreUsername.bind(self));
     self.socket.on('saveChannel', self.onSaveChannel.bind(self));
     self.socket.on('updateUsers', self.onUpdateUsers.bind(self));
@@ -96,15 +95,6 @@ App.prototype.attachSocket = function attachSocket() {
     self.socket.on('chatMessage', self.onChatMessage.bind(self));
     self.socket.on('showTyping', self.onShowTyping.bind(self));
     self.socket.on('showDoneTyping', self.onShowDoneTyping.bind(self));
-    self.socket.on('disconnect', self.onDisconnect.bind(self));
-};
-
-//new user connection notification
-
-App.prototype.onConnect = function onConnect(socket) {
-    var self = this;
-    
-    self.socket.emit('addUser', {});
 };
 
 //save my username
@@ -128,11 +118,15 @@ App.prototype.onUpdateUsers = function onUpdateUsers(data) {
     //check if the person you message is online and change message read/sent status accordingly
     $('#users').empty();
     $.each(self.usernames, function(key, value) {
-        $('#users').append('<button class = "buttons" value = ' + value + '>' + value + '</button><br>');
-        if (value == self.friendUsername) {
-            $('#readStatus').empty();
-            $('#readStatus').append('read');
-        }
+        if (value !== self.username) {
+            $('#users').append('<button class = "buttons" value = ' + value + '>' + value + '</button><br>');
+            if (value == self.friendUsername) {
+                $('#readStatus').empty();
+                $('#readStatus').append('read');
+            } 
+        } else {
+            $('#users').append('<button class = "buttons" disabled = true>' + value + '</button><br>');
+        };
     });
 };
 
@@ -150,7 +144,8 @@ App.prototype.onChatHistory = function onChatHistory(data) {
     self.channel = data.channel;
 
     $.each(data.messages, function(key, value) {
-        $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + value.time.substring(5, 16) + ')'));
+        var time = value.createdAt.toString().substring(14, 19) + ' ' + value.createdAt.toString().substring(5, 10);
+        $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + time + ')'));
 
         self.messagesCount++;//increase pagination offset;
 
@@ -201,12 +196,6 @@ App.prototype.onShowTyping = function onShowTyping(username) {
 
 App.prototype.onShowDoneTyping = function onShowDoneTyping() {
     $('#typingStatus').empty();
-};
-
-//disconnect
-
-App.prototype.onDisconnect = function onDisconnect() {
-    $('#messages').append($('<li>').text(msg));
 };
 
 var app = new App({

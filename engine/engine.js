@@ -16,7 +16,7 @@ function Engine(deps) {
 
 Engine.prototype.addChatter = function addChatter(socket) {
     var self = this;
-    var chatter = new Chatter({ socket: socket, io: self.io, db: self.db, engine: self });
+    var chatter = new Chatter({ socket: socket, db: self.db, engine: self });
 
     chatter.init();
 };

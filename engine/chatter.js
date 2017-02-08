@@ -7,7 +7,6 @@ function Chatter(deps) {
     self.db = deps.db;
     self.socket = deps.socket;
     self.engine = deps.engine;
-    self.io = deps.io;
 };
 
 Chatter.prototype.init = function init() {
@@ -20,10 +19,11 @@ Chatter.prototype.init = function init() {
     }).then(function(user) {
         self.id = user.id;
 
+        self.socket.emit('storeUsername', {username: self.username, id: self.id});
+
+    }).then(function() {
         self.engine.addUser(self.username, self.socket.id, self.id);
 
-        self.socket.emit('storeUsername', {username: self.username, id: self.id});
-        
         self.socket.on('getChatHistory', self.onGetChatHistory.bind(self));
         self.socket.on('chatMessage', self.onChatMessage.bind(self));
         self.socket.on('saveReadStatus', self.onSaveReadStatus.bind(self));
@@ -86,12 +86,13 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
             } else {
                 var channelId = channel[0].dataValues.ChannelId;
                 //get chat history for this channel if there is a channel already
-                self.db.Message.find({
+                self.db.Message.findAll({
                     where: {ChannelId: channelId},
                     order: [['createdAt', 'DESC']],
                     limit: 10,
                     offset: data.offset
                 }).then(function(messages) {
+                    console.log(messages);
                     self.socket.emit('chatHistory', {messages: messages, channel: channelId, pagination: data.pagination});
                 }).catch(function(err) {
                     console.log(err);
@@ -121,7 +122,9 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
         msg: data.msg,
         read: readStatus
     }).then(function(message) {
-        self.io.to(self.engine.getSocketIdByUsername(data.username)).to(self.socket.id).emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: message.createdAt.substring(11, 16)});
+        var friendSocket = self.engine.getSocketIdByUsername(data.username);
+        var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
+        self.io.to(friendSocket).to(self.socket.id).emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
 
         self.db.Channel.find({where: {id: data.channel}
         }).then(function(channel) {
@@ -202,7 +205,7 @@ Chatter.prototype.onDisconnect = function() {
     var str = date.toString().substring(0, 21);
 
     self.db.User.update(
-        {last_active: str},
+        {lastActive: str},
         {where: {id: self.id}}
     ).catch(function(err) {
         console.log(err);
