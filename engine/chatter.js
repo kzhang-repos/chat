@@ -21,6 +21,11 @@ Chatter.prototype.init = function init() {
 
         self.socket.emit('storeUsername', {username: self.username, id: self.id});
 
+        // self.db.User.findAll({
+        //     where: {id: self.id}
+        //     include: {}
+        // })
+
     }).then(function() {
         self.engine.addUser(self.username, self.socket.id, self.id);
 
@@ -41,13 +46,14 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 
     //if there is a known channel for pagination or because you chatted with friend before
     if (data.channel) {
-        self.db.Message.find({
-                    where: {ChannelId: channel.id},
-                    order: ['createdAt', 'DESC'],
+        self.db.Message.findAll({
+                    where: {ChannelId: data.channel},
+                    include: [{model: self.db.User, required: true}],
+                    order: [['createdAt', 'DESC']],
                     limit: 10,
                     offset: data.offset
                 }).then(function(messages) {
-                    socket.emit('chatHistory', {messages: messages, pagination: data.pagination});
+                    self.socket.emit('chatHistory', {messages: messages, pagination: data.pagination});
                 }).catch(function(err) {
                     console.log(err);
                 });
@@ -88,11 +94,11 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
                 //get chat history for this channel if there is a channel already
                 self.db.Message.findAll({
                     where: {ChannelId: channelId},
+                    include: [{model: self.db.User, required: true}],
                     order: [['createdAt', 'DESC']],
                     limit: 10,
                     offset: data.offset
                 }).then(function(messages) {
-                    console.log(messages);
                     self.socket.emit('chatHistory', {messages: messages, channel: channelId, pagination: data.pagination});
                 }).catch(function(err) {
                     console.log(err);
@@ -123,8 +129,10 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
         read: readStatus
     }).then(function(message) {
         var friendSocket = self.engine.getSocketIdByUsername(data.username);
+        var socketId = self.engine.getSocketIdByUsername(self.username);
         var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
-        self.io.to(friendSocket).to(self.socket.id).emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
+        self.socket.broadcast.to(friendSocket).emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
+        self.socket.emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
 
         self.db.Channel.find({where: {id: data.channel}
         }).then(function(channel) {
@@ -177,7 +185,7 @@ Chatter.prototype.onTyping = function onTyping(friendUsername) {
         return;
     }
 
-    self.io.to(socketId).emit('showTyping', self.username);
+    self.socket.broadcast.to(parseInt(socketId)).emit('showTyping', self.username);
 };
 
 Chatter.prototype.onDoneTyping = function oneDonTyping(friendUsername) {
@@ -191,7 +199,7 @@ Chatter.prototype.onDoneTyping = function oneDonTyping(friendUsername) {
         return;
     }    
 
-    self.io.to(socketId).emit('showDoneTyping');
+    self.socket.broadcast.to(socketId).emit('showDoneTyping');
 };
 
 //disconnect

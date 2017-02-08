@@ -1,7 +1,5 @@
 function App(deps) {
     this.username = null;
-    this.id = null;
-    this.friendId = null;
     this.friendUsername = null;
     this.channel = null;
     this.messagesCount = 0;
@@ -39,15 +37,14 @@ App.prototype.setupUI = function() {
 
         //you cannot chat with yourself
 
-        if (chosenId !== self.id) {
+        if (chosenId !== self.usernameToUserId[self.username]) {
             //bold the name of the friend chosen
             $(this).css('font-weight', 'bold');
 
-            self.friendId = chosenId;
             self.friendUsername = chosenUsername;
 
             //get chat history with the chosen friend
-            self.socket.emit('getChatHistory', {offset: self.messagesCount, username: chosenUsername, id: self.friendId, pagination: false});
+            self.socket.emit('getChatHistory', {offset: self.messagesCount, username: chosenUsername, id: chosenId, pagination: false});
             return false;
         };
     });
@@ -141,11 +138,16 @@ App.prototype.onSaveChannel = function onSaveChannel(data) {
 App.prototype.onChatHistory = function onChatHistory(data) {
     var self = this;
 
-    self.channel = data.channel;
+    if (data.channel) {
+        self.channel = data.channel;
+    };
+    
+    var messages = data.messages;
 
-    $.each(data.messages, function(key, value) {
+    $.each(messages, function(key, value) {
+        var username = value.User['username'];
         var time = value.createdAt.toString().substring(14, 19) + ' ' + value.createdAt.toString().substring(5, 10);
-        $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + time + ')'));
+        $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
 
         self.messagesCount++;//increase pagination offset;
 
@@ -154,8 +156,8 @@ App.prototype.onChatHistory = function onChatHistory(data) {
 
     //if you sent the last message show whether it is read or update the other person's chat to 'read'
     if (data.pagination === false) {
-        var lastMessage = data[data.length - 1];
-        if (lastMessage.UserId === self.id) {
+        var lastMessage = messages[messages.length - 1];
+        if (lastMessage.User['id'] === self.usernameToUserId[self.username]) {
             $('#readStatus').empty();
             $('#readStatus').append(lastMessage.read);
             $('#readStatus').val(lastMessage.read);
