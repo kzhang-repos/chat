@@ -20,12 +20,23 @@ Chatter.prototype.init = function init() {
         self.id = user.id;
 
         self.socket.emit('storeUsername', {username: self.username, id: self.id});
-
-        // self.db.User.findAll({
-        //     where: {id: self.id}
-        //     include: {}
-        // })
-
+        
+        //find user's existing channels
+        self.db.User.find({
+            where: {id: self.id},
+            include: [{
+                model: self.db.Channel,
+                order: [['lastActivity', 'DESC']],
+                through: {},
+                include: [{
+                    model: self.db.User
+                }]
+            }]
+        }).then(function(user) {
+            self.socket.emit('addRecentChatters', user.Channels);
+        }).catch(function(err) {
+            console.log(err);
+        });
     }).then(function() {
         self.engine.addUser(self.username, self.socket.id, self.id);
 
@@ -69,22 +80,23 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
         .then(function(channel) {
             if (channel.length === 0) {
                 //create a channel if there is not one already createad
-                self.db.Channel.create({
-                }).then(function(channel) {
-                    self.db.User.findById(self.id
-                    ).then(function(user){
-                        user.addChannel(channel);
-                    }).catch(function(err) {
-                        console.log(err);
-                    });
+                //create new channel and add users to the channel is a transaction
+                return self.db.sequelize.transaction(function(t) {
+                    return self.db.Channel.create({
+                        }, {transaction: t}).then(function(channel) {
+                            var p1 = self.db.User.findById(self.id
+                                    ).then(function(user){
+                                        user.addChannel(channel);
+                                    }, {transaction: t});
 
-                    self.db.User.findById(data.id
-                    ).then(function(user){
-                        user.addChannel(channel);
-                    }).catch(function(err) {
-                        console.log(err);fn
-                    });
+                            var p2 = self.db.User.findById(data.id
+                                    ).then(function(user){
+                                        user.addChannel(channel);
+                                    }, {transaction: t});
 
+                            return Promise.all([p1, p2]);
+                        });
+                }).then(function(channel){
                     self.socket.emit('saveChannel', channel.id);
                 }).catch(function(err) {
                     console.log(err);
