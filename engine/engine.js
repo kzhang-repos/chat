@@ -9,27 +9,32 @@ function Engine(deps) {
     // maintain list of online users in here
     // Chatter will return new usernames to add to list
     self.usernameToSocketId = {};
+    self.usernameToUserId = {};
     
     self.io.sockets.on('connection', self.addChatter.bind(self));
 };
 
 Engine.prototype.addChatter = function addChatter(socket) {
     var self = this;
-    var chatter = new Chatter({ socket: socket, db: self.db, engine: self });
+    var chatter = new Chatter({ socket: socket, io: self.io, db: self.db, engine: self });
 
     chatter.init();
 };
 
-Engine.prototype.addUser = function addUser(username, socketId) {
+Engine.prototype.addUser = function addUser(username, socketId, userId) {
     var self = this;
     self.usernameToSocketId[username] = socketId;
-    self.io.sockets.emit('updateUsers', Object.keys(self.usernameToSocketId));
+    self.usernameToUserId[username] = userId;
+
+    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernameToSocketId), usernameToUserId: self.usernameToUserId});
 };
 
 Engine.prototype.removeUser = function removeUser(username) {
     var self = this;
     delete self.usernameToSocketId[username];
-    self.io.sockets.broadcast.emit('updateUsers', Object.keys(self.usernameToSocketId));
+    delete self.usernameToUserId[username];
+
+    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernameToSocketId), usernameToUserId: self.usernameToUserId});
 };
 
 Engine.prototype.getSocketIdByUsername = function getSocketIdByUsername(username) {

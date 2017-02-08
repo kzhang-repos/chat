@@ -37,6 +37,8 @@ Router.prototype.register = function register(req, res) {
 };
 
 Router.prototype.reg = function reg(req, res) {
+    var self = this;
+    
     self.db.User.create({
         username: req.body.username,
         password: req.body.password
@@ -73,7 +75,7 @@ Router.prototype.auth = function auth(req, res) {
                 if (err) res.json('wrong password');
                 else {
                     req.session.username = user.username;
-                    res.redirect('/chat');
+                    res.redirect('/');
                 }
             })
         }

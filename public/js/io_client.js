@@ -4,8 +4,9 @@ function App(deps) {
     this.friendId = null;
     this.friendUsername = null;
     this.channel = null;
-    this.messagesCount = null;
+    this.messagesCount = 0;
     this.usernames = [];
+    this.usernameToUserId = {};
 
     this.socket = deps.socket;
 };
@@ -29,8 +30,8 @@ App.prototype.setupUI = function() {
 
     $(document).on('click', '.buttons', function(){
 
-        var chosenId = parseInt($(this).attr('id'));
         var chosenUsername = $(this).html();
+        var chosenId = self.usernameToUserId[chosenUsername];
 
         //you cannot chat with yourself
 
@@ -40,7 +41,7 @@ App.prototype.setupUI = function() {
             //bold the name of the friend chosen
             $(this).css('font-weight', 'bold');
 
-            self.friendId = parseInt(chosenId);
+            self.friendId = chosenId;
             self.friendUsername = chosenUsername;
 
             //get chat history with the chosen friend
@@ -112,6 +113,7 @@ App.prototype.onStoreUsername = function onStoreUsername(data) {
     var self = this;
 
     self.username = data.username;
+    $('#welcome').empty();
     $('#welcome').append('<b>Welcome ' + self.username + '</b>');
 };
 
@@ -120,7 +122,8 @@ App.prototype.onStoreUsername = function onStoreUsername(data) {
 App.prototype.onUpdateUsers = function onUpdateUsers(data) {
     var self = this;
 
-    self.usernames = data;
+    self.usernames = data.usernames;
+    self.usernameToUserId = data.usernameToUserId;
 
     //check if the person you message is online and change message read/sent status accordingly
     $('#users').empty();
@@ -143,6 +146,8 @@ App.prototype.onSaveChannel = function onSaveChannel(data) {
 
 App.prototype.onChatHistory = function onChatHistory(data) {
     var self = this;
+
+    self.channel = data.channel;
 
     $.each(data.messages, function(key, value) {
         $('.inner').prepend($('<li>').text(value.username + ': ' + value.msg + ' (' + value.time.substring(5, 16) + ')'));
@@ -181,20 +186,8 @@ App.prototype.onChatMessage = function onChatMessage(data) {
     $('#readStatus').empty();
     
     if (data.username === self.username) {
-        if (self.usernames.indexOf(self.friendUsername) === -1) {
-            if (!$('#readStatus').val()) {
-                $('#readStatus').empty();
-            }
-                $('#readStatus').append('sent');
-                $('#readStatus').val('sent');
-        } else {
-            if (!$('#readStatus').val()) {
-                $('#readStatus').empty();
-            }
-                $('#readStatus').append('read');
-                $('#readStatus').val('read');
-        }
-        self.socket.emit('saveReadStatus', {id: data.id, read: $('#read_status').val()});
+        $('#readStatus').empty();
+        $('#readStatus').append(data.read);
     } else {
         $('#readStatus').empty();
     };
