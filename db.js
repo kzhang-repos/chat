@@ -7,6 +7,7 @@ var sequelize = new Sequelize('chat', 'root', 'meowmeow', {
     host: 'localhost',
     port: 3306,
     dialect: 'mysql',
+    timezone: 'America/Los_Angeles',
     pool: {
         max: 5,
     }
@@ -46,8 +47,6 @@ db.Channel.hasMany(db.Message);
 
 db.User.belongsToMany(db.Channel, {through: 'UserChannel'});
 db.Channel.belongsToMany(db.User, {through: 'UserChannel'});
-
-db.User.belongsToMany(db.Channel, {as: 'Friend', through: 'Friendship'});
 
 module.exports = db;
 

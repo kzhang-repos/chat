@@ -3,6 +3,7 @@ function Chatter(deps) {
 
     self.id = null;
     self.username = null;
+    self.channel = null;
 
     self.db = deps.db;
     self.socket = deps.socket;
@@ -18,27 +19,9 @@ Chatter.prototype.init = function init() {
         where: {username: self.username}
     }).then(function(user) {
         self.id = user.id;
-
-        self.socket.emit('storeUsername', {username: self.username, id: self.id});
-        
-        //find user's existing channels
-        self.db.User.find({
-            where: {id: self.id},
-            include: [{
-                model: self.db.Channel,
-                order: [['lastActivity', 'DESC']],
-                through: {},
-                include: [{
-                    model: self.db.User
-                }]
-            }]
-        }).then(function(user) {
-            self.socket.emit('addRecentChatters', user.Channels);
-        }).catch(function(err) {
-            console.log(err);
-        });
+        self.socket.emit('storeUsername', self.username);
     }).then(function() {
-        self.engine.addUser(self.username, self.socket.id, self.id);
+        self.engine.addUser(self.username);
 
         self.socket.on('getChatHistory', self.onGetChatHistory.bind(self));
         self.socket.on('chatMessage', self.onChatMessage.bind(self));
@@ -55,21 +38,8 @@ Chatter.prototype.init = function init() {
 Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
     var self = this;
 
-    //if there is a known channel for pagination or because you chatted with friend before
-    if (data.channel) {
-        self.db.Message.findAll({
-                    where: {ChannelId: data.channel},
-                    include: [{model: self.db.User, required: true}],
-                    order: [['createdAt', 'DESC']],
-                    limit: 10,
-                    offset: data.offset
-                }).then(function(messages) {
-                    self.socket.emit('chatHistory', {messages: messages, pagination: data.pagination});
-                }).catch(function(err) {
-                    console.log(err);
-                });
-    } else {
-        //find if there is a channel for you and friend
+    if (!data.pagination) {
+        //find if there is a channel for users
         self.db.sequelize.query(' \
             SELECT uc1.ChannelId FROM   \
                 UserChannel uc1, UserChannel uc2      \
@@ -95,8 +65,9 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
                     }).catch(function(err) {
                         console.log(err);
                     });
-
-                    self.socket.emit('saveChannel', channel.id);
+                    
+                    self.channel = channel.id;
+                    self.engine.addChannel({socket: self.socket.id, channel: self.channel});
                 }).catch(function(err) {
                     console.log(err);
                 });
@@ -110,11 +81,26 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
                     limit: 10,
                     offset: data.offset
                 }).then(function(messages) {
-                    self.socket.emit('chatHistory', {messages: messages, channel: channelId, pagination: data.pagination});
+                    self.channel = channelId;
+                    self.engine.addChannel({socket: self.socket.id, channel: channelId});
+                    self.socket.emit('chatHistory', messages);
                 }).catch(function(err) {
                     console.log(err);
                 });
             };
+        }).catch(function(err) {
+            console.log(err);
+        });
+    } else {
+        //pagination 
+        self.db.Message.findAll({
+            where: {ChannelId: self.channel},
+            include: [{model: self.db.User, required: true}],
+            order: [['createdAt', 'DESC']],
+            limit: 10,
+            offset: data.offset
+        }).then(function(messages) {
+            self.socket.emit('chatHistory', messages);
         }).catch(function(err) {
             console.log(err);
         });
@@ -126,26 +112,16 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 Chatter.prototype.onChatMessage = function onChatMessage(data) {
     var self = this;
 
-    //save message to DB
-    var readStatus = '';
-
-    if (self.engine.getSocketIdByUsername(data.username)) {
-        readStatus = 'read';
-    } else {
-        readStatus = 'sent';
-    };
-
     self.db.Message.create({
         msg: data.msg,
-        read: readStatus
     }).then(function(message) {
-        var friendSocket = self.engine.getSocketIdByUsername(data.username);
-        var socketId = self.engine.getSocketIdByUsername(self.username);
         var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
-        self.socket.broadcast.to(friendSocket).emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
-        self.socket.emit('chatMessage', {username: self.username, msg: message.msg, read: message.read, time: time});
 
-        self.db.Channel.find({where: {id: data.channel}
+        self.channelToSockets[self.channel].forEach(function(socket) {
+            self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg, time: time});
+        });
+
+        self.db.Channel.find({where: {id: self.channel}
         }).then(function(channel) {
             channel.addMessage(message);
         }).catch(function(err) {
@@ -161,56 +137,23 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
     }).catch(function(err) {
         console.log(err);
     });
+};
 
-    //update channel's last activity time
-    self.db.Channel.update(
-        {updatedAt: self.db.sequelize.fn('NOW')},
-        {where: {id: data.channel}}
-    ).catch(function(err) {
-        console.log(err);
+//notify online users in the same channel when user is typing
+Chatter.prototype.onTyping = function onTyping(channel) {
+    var self = this;
+
+    self.channelToSockets[channel].forEach(function(socket) {
+        if (socket !== self.socket.id) self.socket.broadcast.to(socket).emit('showTyping', self.username);
     });
 };
 
-//save whether the message is read by receiver
-
-Chatter.prototype.onSaveReadStatus = function onSaveReadStatus(data){
+Chatter.prototype.onDoneTyping = function oneDonTyping(channel) {
     var self = this;
 
-    self.db.Message.update(
-        {read: data.read},
-        {where: {id: data.id}}
-    ).catch(function(err) {
-        console.log(err);
+    self.channelToSockets[channel].forEach(function(socket) {
+        if (socket !== self.socket.id) self.socket.broadcast.to(socket).emit('showDoneTyping');
     });
-};
-
-// Let specific users know when chatter is typing
-Chatter.prototype.onTyping = function onTyping(friendUsername) {
-    var self = this;
-
-    var socketId = self.engine.getSocketIdByUsername(friendUsername);
-
-    // if socketId is missing, friend probably disconnected while we were typing to them,
-    // don't need to send them notification
-    if (!socketId) {
-        return;
-    }
-
-    self.socket.broadcast.to(parseInt(socketId)).emit('showTyping', self.username);
-};
-
-Chatter.prototype.onDoneTyping = function oneDonTyping(friendUsername) {
-    var self = this;
-
-    var socketId = self.engine.getSocketIdByUsername(friendUsername);
-
-    // if socketId is missing, friend probably disconnected while we were typing to them,
-    // don't need to send them notification
-    if (!socketId) {
-        return;
-    }    
-
-    self.socket.broadcast.to(socketId).emit('showDoneTyping');
 };
 
 //disconnect
@@ -219,16 +162,7 @@ Chatter.prototype.onDisconnect = function() {
     var self = this;
 
     self.engine.removeUser(self.username);
-
-    var date = new Date();
-    var str = date.toString().substring(0, 21);
-
-    self.db.User.update(
-        {lastActive: str},
-        {where: {id: self.id}}
-    ).catch(function(err) {
-        console.log(err);
-    });
+    self.engine.removeSocket({channel: self.channel, socket: self.socket.id});
 };
 
 module.exports = Chatter;

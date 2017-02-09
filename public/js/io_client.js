@@ -1,11 +1,7 @@
 function App(deps) {
     this.username = null;
-    this.friendUsername = null;
-    this.friendId = null;
-    this.channel = null;
     this.messagesCount = 0;
     this.usernames = [];
-    this.usernameToUserId = {};
 
     this.socket = deps.socket;
 };
@@ -28,55 +24,17 @@ App.prototype.setupUI = function() {
     if(isScrolledToBottom)
         out.scrollTop = out.scrollHeight - out.clientHeight;
 
-    //choose a recent chatter to chat with
-
-    $(document).on('click', '.recentChatters', function(){
-
-        //check if another button was clicked before
-        $('.recentChatters').each(function(key, value) {
-            if ($(value).css('font-weight') === 'bold') {
-                $('#readStatus').empty();
-                $('#messages').empty();
-                $(value).css('font-weight', 'normal');
-            }
-        });
-
-        //bold the name of the friend chosen
-        $(this).css('font-weight', 'bold');
-
-        //unhide message box
-        $('#messages').show();
-
-        var chosenUsername = $(this).val();
-        var chosenId = self.usernameToUserId[chosenUsername];
-        self.channel = parseInt($(this).attr('id'));
-
-        self.friendUsername = chosenUsername;
-
-        //get chat history with the chosen friend
-        self.socket.emit('getChatHistory', {offset: self.messagesCount, channel: self.channel, username: chosenUsername, id: chosenId, pagination: false});
-        return false;
-        
-    });
-
     //choose an active user to chat with
 
     $(document).one('click', '.activeUsers', function(){
         $('#messages').show();//unhide message box
 
-        var chosenUsername = $(this).html();
-        var chosenId = self.usernameToUserId[chosenUsername];
-
-        //you cannot chat with yourself
-
-        if (chosenId !== self.usernameToUserId[self.username]) {
-            //bold the name of the friend chosen
+        //user cannot chat with himself
+        if (chosenUsername !== self.username) {
             $(this).css('font-weight', 'bold');
 
-            self.friendUsername = chosenUsername;
-
-            //get chat history with the chosen friend
-            self.socket.emit('getChatHistory', {offset: self.messagesCount, username: chosenUsername, id: chosenId, pagination: false});
+            //get chat history with the chosen user
+            self.socket.emit('getChatHistory', {offset: self.messagesCount, id: chosenId, pagination: false});
             return false;
         };
     });
@@ -86,30 +44,29 @@ App.prototype.setupUI = function() {
     $("#messages").scroll(function() {
         var div = $(this);
         if (div.scrollTop() == 0) {
-            self.socket.emit('getChatHistory', {offset: self.messagesCount, channel: self.channel, pagination: true});
+            self.socket.emit('getChatHistory', {offset: self.messagesCount, pagination: true});
         }
     });
 
     //send chat
 
     $('#conversation').submit(function(){
-        self.socket.emit('chatMessage', {msg: $('#msg').val(), channel: self.channel, username: self.friendUsername});
+        self.socket.emit('chatMessage', $('#msg').val());
         $('#msg').val('');
         return false;
     });
 
-    //show friend whether you are typing (if friend is still online)
+    //show the receiver whether the user is typing 
     
-    var timeouts = {};
     time = 2000;
     $('#conversation input').keyup(function(){
-        var receiver = self.friendUsername;
-        if (receiver in timeouts) clearTimeout(timeouts[receiver]); 
-        else self.socket.emit("typing", receiver);
+        var receiver;
+        if (receiver) clearTimeout(receiver); 
+        else self.socket.emit("typing");
         
-        timeouts[receiver] = setTimeout(function() {
-            self.socket.emit("doneTyping", receiver);
-            delete timeouts[receiver];
+        receiver = setTimeout(function() {
+            self.socket.emit("doneTyping");
+            delete receiver;
         }, time);
     });
 };
@@ -118,8 +75,6 @@ App.prototype.attachSocket = function attachSocket() {
     var self = this;
     
     self.socket.on('storeUsername', self.onStoreUsername.bind(self));  
-    self.socket.on('saveChannel', self.onSaveChannel.bind(self));
-    self.socket.on('addRecentChatters', self.onAddRecentChatters.bind(self));
     self.socket.on('updateUsers', self.onUpdateUsers.bind(self));
     self.socket.on('chatHistory', self.onChatHistory.bind(self));
     self.socket.on('chatMessage', self.onChatMessage.bind(self));
@@ -127,107 +82,38 @@ App.prototype.attachSocket = function attachSocket() {
     self.socket.on('showDoneTyping', self.onShowDoneTyping.bind(self));
 };
 
-//save my username
+//save user username
 
-App.prototype.onStoreUsername = function onStoreUsername(data) {
+App.prototype.onStoreUsername = function onStoreUsername(username) {
     var self = this;
 
-    self.username = data.username;
+    self.username = username;
     $('#welcome').empty();
     $('#welcome').append('<b>Welcome ' + self.username + '</b>');
 };
 
-//list people user has chatted with before
-
-App.prototype.onAddRecentChatters = function onAddRecentChatters(data) {
-    var self = this;
-    
-    $('#recentChatters').empty();
-    $.each(data, function(key, value) {
-        var channelId = value.id;
-
-        var userArr = value.Users;
-
-        var name = '';
-        var lastActive = '';
-        userArr.forEach(function(user){
-            if (user.username !== self.username) {
-                name = user.username;
-                lastActive = user.lastActive;
-                self.usernameToUserId[name] = user.id;
-            }
-        });
-
-        $('#recentChatters').append('<button class = "recentChatters" + value = ' + name + ' id =' + channelId + '>' + name + ' (last active: ' + lastActive + ')</button><br>');
-    });
-};
-
 //update active users everytime a new connection is established
 
-App.prototype.onUpdateUsers = function onUpdateUsers(data) {
+App.prototype.onUpdateUsers = function onUpdateUsers(usernames) {
     var self = this;
 
-    self.usernames = data.usernames;
-    self.usernameToUserId = data.usernameToUserId;
-
-    //check if the person you message is online and change message read/sent status accordingly
-    $('#activeUsers').empty();
-    $.each(self.usernames, function(key, value) {
-        if (value !== self.username) {
-            $('#activeUsers').append('<button class = "activeUsers" value = ' + value + '>' + value + '</button><br>');
-            if (value == self.friendUsername) {
-                $('#readStatus').empty();
-                $('#readStatus').append('read');
-            } 
-        } else {
-            $('#activeUsers').append('<button class = "buttons" disabled = true>' + value + '</button><br>');
-        };
-    });
-};
-
-//save channel id
-
-App.prototype.onSaveChannel = function onSaveChannel(data) {
-    this.channel = data;
+    self.usernames = usernames;
 };
 
 //show chat history with the chosen user or after scrolling to top
 
-App.prototype.onChatHistory = function onChatHistory(data) {
+App.prototype.onChatHistory = function onChatHistory(messages) {
     var self = this;
-
-    if (data.channel) {
-        self.channel = data.channel;
-    };
     
-    var messages = data.messages;
-
     $.each(messages, function(key, value) {
 
         var username = value.User['username'];
-        if (self.usernameToUserId[self.friendUsername]) {
-            var time = value.createdAt.toString().substring(14, 19) + ' ' + value.createdAt.toString().substring(5, 10);
-            $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
-        } else {
-            $('.inner').prepend($('<li>').text(username + ': ' + value.msg));
-        };
+        var time = value.createdAt.toString().substring(11, 16) + ' ' + value.createdAt.toString().substring(5, 10);
+        $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
             
         self.messagesCount++;//increase pagination offset;
-
         $("#messages").scrollTop($("#messages")[0].scrollHeight);//keep scrollbar at bottom 
     });
-
-    //if you sent the last message show whether it is read or update the other person's chat to 'read'
-    if (data.pagination === false) {
-        var lastMessage = messages[messages.length - 1];
-        if (lastMessage.User['id'] === self.usernameToUserId[self.username]) {
-            $('#readStatus').empty();
-            $('#readStatus').append(lastMessage.read);
-            $('#readStatus').val(lastMessage.read);
-        } else {
-            self.socket.emit('saveReadStatus', {id: lastMessage.id, read: 'read'})
-        }
-    }
 };
 
 //receive chat
@@ -240,20 +126,9 @@ App.prototype.onChatMessage = function onChatMessage(data) {
     self.messagesCount++;//pagination offset;
 
     $("#messages").scrollTop($("#messages")[0].scrollHeight);//keep scrollbar at bottom;
-
-    //show whether your message has been read if you send the last message
-
-    $('#readStatus').empty();
-    
-    if (data.username === self.username) {
-        $('#readStatus').empty();
-        $('#readStatus').append(data.read);
-    } else {
-        $('#readStatus').empty();
-    };
 };
 
-//show whether friend is typing
+//show whether someone in the channel is typing
 
 App.prototype.onShowTyping = function onShowTyping(username) {
     $('#typingStatus').append(username + ' is typing ...');
