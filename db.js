@@ -12,10 +12,10 @@ var sequelize = new Sequelize('chat', null, 'meowmeow', {
     timezone: '-00:00',
     replication: {
         read: [
-                { host: 'localhost', username: 'root', password: 'meowmeow'},
-                { host: 'localhost', username: 'root', password: 'meowmeow'}
+                { host: 'localhost', username: process.env['DB_USERNAME'], password: process.env['DB_PASSWORD']},
+                { host: 'localhost', username: process.env['DB_USERNAME'], password: process.env['DB_PASSWORD']}
             ],
-        write: { host: 'localhost', username: 'root', password: 'meowmeow'}
+        write: { host: 'localhost', username: process.env['DB_USERNAME'], password: process.env['DB_PASSWORD']}
     },
     pool: {
         maxConnections: 20,
@@ -29,8 +29,8 @@ db.User = sequelize.import(__dirname + '/models/user.js');
 db.Message = sequelize.import(__dirname + '/models/message.js');
 db.Channel = sequelize.import(__dirname + '/models/channel.js');
 
-db.Message.belongsTo(db.User, {foreignKey: 'UserId'});
-db.User.hasMany(db.Message, {foreignKey: 'UserId'});
+db.Message.belongsTo(db.User);
+db.User.hasMany(db.Message);
 
 db.Message.belongsTo(db.Channel, {foreignKey: 'ChannelId'});
 db.Channel.hasMany(db.Message, {foreignKey: 'ChannelId'});

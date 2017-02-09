@@ -9,7 +9,12 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceRoot}/index.js",
-            "cwd": "${workspaceRoot}"
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "DB_USERNAME": "root",
+                "DB_PASSWORD": "meowmeow",
+                "SESSION_SECRET": "secret"
+            }
         },
         {
             "type": "node",

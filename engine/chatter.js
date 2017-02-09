@@ -114,6 +114,7 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
     self.db.Message.create({
         msg: data
     }).then(function(message) {
+        console.log(message.createdAt.toString());
         var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
 
         self.engine.channelToSockets[self.channel].forEach(function(socket) {

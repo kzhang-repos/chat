@@ -7,7 +7,7 @@ var session = require('express-session');
 var bodyParser = require('body-parser')();
 var cookieParser = require('cookie-parser')();
 var RedisStore = require('connect-redis')(session);
-var sessionMiddleware = session({secret: 'secret', store: new RedisStore({})});
+var sessionMiddleware = session({secret: process.env['SESSION_SECRET'], store: new RedisStore({})});
 
 app.use(bodyParser);
 app.use(cookieParser);

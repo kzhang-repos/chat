@@ -3,7 +3,7 @@ module.exports = function(sequelize, Datatypes) {
         id: {
             type: Datatypes.INTEGER,
             autoIncrement: true,
-            PrimaryKey: true
+            primaryKey: true
         }
     });
 };
