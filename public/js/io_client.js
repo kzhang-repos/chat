@@ -1,7 +1,6 @@
 function App(deps) {
     this.username = null;
     this.messagesCount = 0;
-    this.usernames = [];
 
     this.socket = deps.socket;
 };
@@ -24,19 +23,17 @@ App.prototype.setupUI = function() {
     if(isScrolledToBottom)
         out.scrollTop = out.scrollHeight - out.clientHeight;
 
-    //choose an active user to chat with
+    //choose an active user to chat with. can only pick once.
 
-    $(document).one('click', '.activeUsers', function(){
+    $(document).one('click', '.buttons', function(){
         $('#messages').show();//unhide message box
+       
+        $(this).css('font-weight', 'bold');
 
-        //user cannot chat with himself
-        if (chosenUsername !== self.username) {
-            $(this).css('font-weight', 'bold');
-
-            //get chat history with the chosen user
-            self.socket.emit('getChatHistory', {offset: self.messagesCount, id: chosenId, pagination: false});
-            return false;
-        };
+        var chosenId = $(this).attr('id');
+        //get chat history with the chosen user
+        self.socket.emit('getChatHistory', {offset: self.messagesCount, id: parseInt(chosenId), pagination: false});
+        return false;
     });
 
     //pagination
@@ -94,10 +91,17 @@ App.prototype.onStoreUsername = function onStoreUsername(username) {
 
 //update active users everytime a new connection is established
 
-App.prototype.onUpdateUsers = function onUpdateUsers(usernames) {
+App.prototype.onUpdateUsers = function onUpdateUsers(data) {
     var self = this;
 
-    self.usernames = usernames;
+     $('#users').empty();
+     $.each(data.usernames, function(key, value) {		      
+          if (value !== self.username) {
+               $('#users').append('<button class = "buttons" id = ' + data.usernameToId[value]+ '>' + value + '</button><br>');
+          } else {
+               $('#users').append('<button class = "buttons" disabled = true>' + value + '</button><br>');
+          };
+     });
 };
 
 //show chat history with the chosen user or after scrolling to top
@@ -131,6 +135,7 @@ App.prototype.onChatMessage = function onChatMessage(data) {
 //show whether someone in the channel is typing
 
 App.prototype.onShowTyping = function onShowTyping(username) {
+    $('#typingStatus').empty();
     $('#typingStatus').append(username + ' is typing ...');
 };
 

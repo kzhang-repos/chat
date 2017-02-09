@@ -21,11 +21,10 @@ Chatter.prototype.init = function init() {
         self.id = user.id;
         self.socket.emit('storeUsername', self.username);
     }).then(function() {
-        self.engine.addUser(self.username);
+        self.engine.addUser({username: self.username, id: self.id});
 
         self.socket.on('getChatHistory', self.onGetChatHistory.bind(self));
         self.socket.on('chatMessage', self.onChatMessage.bind(self));
-        self.socket.on('saveReadStatus', self.onSaveReadStatus.bind(self));
         self.socket.on('typing', self.onTyping.bind(self));
         self.socket.on('doneTyping', self.onDoneTyping.bind(self));
         self.socket.on('disconnect', self.onDisconnect.bind(self));
@@ -113,13 +112,14 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
     var self = this;
 
     self.db.Message.create({
-        msg: data.msg,
+        msg: data
     }).then(function(message) {
         var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
 
-        self.channelToSockets[self.channel].forEach(function(socket) {
+        self.engine.channelToSockets[self.channel].forEach(function(socket) {
             self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg, time: time});
         });
+        self.socket.emit('chatMessage', {username: self.username, msg: message.msg, time: time});
 
         self.db.Channel.find({where: {id: self.channel}
         }).then(function(channel) {
@@ -140,19 +140,19 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
 };
 
 //notify online users in the same channel when user is typing
-Chatter.prototype.onTyping = function onTyping(channel) {
+Chatter.prototype.onTyping = function onTyping() {
     var self = this;
 
-    self.channelToSockets[channel].forEach(function(socket) {
-        if (socket !== self.socket.id) self.socket.broadcast.to(socket).emit('showTyping', self.username);
+    self.engine.channelToSockets[self.channel].forEach(function(socket) {
+        self.socket.broadcast.to(socket).emit('showTyping', self.username);
     });
 };
 
-Chatter.prototype.onDoneTyping = function oneDonTyping(channel) {
+Chatter.prototype.onDoneTyping = function oneDonTyping() {
     var self = this;
 
-    self.channelToSockets[channel].forEach(function(socket) {
-        if (socket !== self.socket.id) self.socket.broadcast.to(socket).emit('showDoneTyping');
+    self.engine.channelToSockets[self.channel].forEach(function(socket) {
+        self.socket.broadcast.to(socket).emit('showDoneTyping');
     });
 };
 

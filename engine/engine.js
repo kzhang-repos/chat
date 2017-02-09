@@ -7,7 +7,8 @@ function Engine(deps) {
     self.io = deps.io;
 
     // maintain list of online users 
-    self.usernames = [];
+    self.usernames = {};
+    self.usernameToId= {};
     //maintain list of sockets in a channel
     self.channelToSockets = {};
     
@@ -22,33 +23,45 @@ Engine.prototype.addChatter = function addChatter(socket) {
 };
 
 Engine.prototype.addChannel = function addChannel(data) {
-    self.channelToSockets[data.channel] = [] || self.channelToSockets[data.channel];
+    var self = this;
+
+    if (!self.channelToSockets[data.channel]) {
+        self.channelToSockets[data.channel] = [];
+    };
     self.channelToSockets[data.channel].push(data.socket);
 };
 
 Engine.prototype.removeSocket = function removeSocket(data) {
     var self = this;
 
-    var index = self.channelToSockes[data.channel].indexOf(data.socket);
-    self.channelToSockes[data.channel].splice(index, 1);
-    if (self.channelToSockes[data.channel].length === 0) {
-        delete self.channelToSockes[data.channel];
+    if (data.channel && self.channelToSockets && self.channelToSockets[data.channel] !== undefined) {
+        var index = self.channelToSockets[data.channel].indexOf(data.socket);
+        self.channelToSockets[data.channel].splice(index, 1);
+        if (self.channelToSockets[data.channel].length === 0) {
+            delete self.channelToSockets[data.channel];
+        };
     };
 };
 
-Engine.prototype.addUser = function addUser(username) {
+Engine.prototype.addUser = function addUser(data) {
     var self = this;
-    self.usernames.push(username);
+    
+    self.usernames[data.username] = self.usernames[data.username] || 0;
+    self.usernames[data.username]++;
 
-    self.io.sockets.emit('updateUsers', self.usernames);
+    self.usernameToId[data.username] = data.id;
+    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernames), usernameToId: self.usernameToId});
 };
 
 Engine.prototype.removeUser = function removeUser(username) {
     var self = this;
-    index = self.usernames.indexOf(username);
-    self.usernames.splice(index, 1);
-
-    self.io.sockets.emit('updateUsers', self.usernames);
+    self.usernames[username]--;
+    if (self.usernames[username] === 0) {
+        delete self.usernames[username];
+        delete self.usernameToId[username];
+    };
+    
+    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernames), usernameToId: self.usernameToId});
 };
 
 module.exports = Engine;
