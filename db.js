@@ -7,8 +7,30 @@ var sequelize = new Sequelize('chat', 'root', 'meowmeow', {
     host: 'localhost',
     port: 3306,
     dialect: 'mysql',
-    pool: {max: 5}
+    pool: {
+        max: 5,
+    }
 });
+
+// var sequelize = new Sequelize('chat', null, 'meowmeow', {
+//     logging: console.log,
+//     port: 3306,
+//     dialect: 'mysql',
+//     replication: {
+//         read: [
+//                 { host: 'localhost', username: 'root', password: 'meowmeow'},
+//                 { host: 'localhost', username: 'root', password: 'meowmeow'}
+//             ],
+//         write: { host: 'localhost', username: 'root', password: 'meowmeow'}
+//     },
+//     pool: {
+//         maxConnections: 20,
+//         maxIdleTime: 30000
+//     }
+// });
+
+//one master two slaves. read and write from the master, read from the master and two slaves. shard based on channel id and 
+//message createdAt.
 
 db.sequelize = sequelize;
 
@@ -24,6 +46,8 @@ db.Channel.hasMany(db.Message);
 
 db.User.belongsToMany(db.Channel, {through: 'UserChannel'});
 db.Channel.belongsToMany(db.User, {through: 'UserChannel'});
+
+db.User.belongsToMany(db.Channel, {as: 'Friend', through: 'Friendship'});
 
 module.exports = db;
 

@@ -80,23 +80,22 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
         .then(function(channel) {
             if (channel.length === 0) {
                 //create a channel if there is not one already createad
-                //create new channel and add users to the channel is a transaction
-                return self.db.sequelize.transaction(function(t) {
-                    return self.db.Channel.create({
-                        }, {transaction: t}).then(function(channel) {
-                            var p1 = self.db.User.findById(self.id
-                                    ).then(function(user){
-                                        user.addChannel(channel);
-                                    }, {transaction: t});
+                self.db.Channel.create({
+                }).then(function(channel) {
+                    self.db.User.findById(self.id
+                    ).then(function(user){
+                        user.addChannel(channel);
+                    }).catch(function(err) {
+                        console.log(err);
+                    });
 
-                            var p2 = self.db.User.findById(data.id
-                                    ).then(function(user){
-                                        user.addChannel(channel);
-                                    }, {transaction: t});
+                    self.db.User.findById(data.id
+                    ).then(function(user){
+                        user.addChannel(channel);
+                    }).catch(function(err) {
+                        console.log(err);
+                    });
 
-                            return Promise.all([p1, p2]);
-                        });
-                }).then(function(channel){
                     self.socket.emit('saveChannel', channel.id);
                 }).catch(function(err) {
                     console.log(err);

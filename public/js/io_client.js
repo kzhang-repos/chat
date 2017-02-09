@@ -1,6 +1,7 @@
 function App(deps) {
     this.username = null;
     this.friendUsername = null;
+    this.friendId = null;
     this.channel = null;
     this.messagesCount = 0;
     this.usernames = [];
@@ -9,7 +10,7 @@ function App(deps) {
     this.socket = deps.socket;
 };
 
-App.prototype.setup = function() {
+App.prototype.setup = function() { 
     this.setupUI();
     this.attachSocket();
 }
@@ -29,15 +30,26 @@ App.prototype.setupUI = function() {
 
     //choose a recent chatter to chat with
 
-    $(document).one('click', '.recentChatters', function(){
-        $('#messages').show();//unhide message box
+    $(document).on('click', '.recentChatters', function(){
+
+        //check if another button was clicked before
+        $('.recentChatters').each(function(key, value) {
+            if ($(value).css('font-weight') === 'bold') {
+                $('#readStatus').empty();
+                $('#messages').empty();
+                $(value).css('font-weight', 'normal');
+            }
+        });
+
+        //bold the name of the friend chosen
+        $(this).css('font-weight', 'bold');
+
+        //unhide message box
+        $('#messages').show();
 
         var chosenUsername = $(this).val();
         var chosenId = self.usernameToUserId[chosenUsername];
         self.channel = parseInt($(this).attr('id'));
-
-        //bold the name of the friend chosen
-        $(this).css('font-weight', 'bold');
 
         self.friendUsername = chosenUsername;
 
@@ -104,8 +116,8 @@ App.prototype.setupUI = function() {
 
 App.prototype.attachSocket = function attachSocket() {
     var self = this;
-
-    self.socket.on('storeUsername', self.onStoreUsername.bind(self));
+    
+    self.socket.on('storeUsername', self.onStoreUsername.bind(self));  
     self.socket.on('saveChannel', self.onSaveChannel.bind(self));
     self.socket.on('addRecentChatters', self.onAddRecentChatters.bind(self));
     self.socket.on('updateUsers', self.onUpdateUsers.bind(self));
@@ -146,7 +158,7 @@ App.prototype.onAddRecentChatters = function onAddRecentChatters(data) {
             }
         });
 
-        $('#recentChatters').append('<button class = "recentChatters" + value = ' + name + ' id =' + channelId + '>' + name + ' (' + lastActive + ')</button><br>');
+        $('#recentChatters').append('<button class = "recentChatters" + value = ' + name + ' id =' + channelId + '>' + name + ' (last active: ' + lastActive + ')</button><br>');
     });
 };
 
@@ -191,10 +203,15 @@ App.prototype.onChatHistory = function onChatHistory(data) {
     var messages = data.messages;
 
     $.each(messages, function(key, value) {
-        var username = value.User['username'];
-        var time = value.createdAt.toString().substring(14, 19) + ' ' + value.createdAt.toString().substring(5, 10);
-        $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
 
+        var username = value.User['username'];
+        if (self.usernameToUserId[self.friendUsername]) {
+            var time = value.createdAt.toString().substring(14, 19) + ' ' + value.createdAt.toString().substring(5, 10);
+            $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
+        } else {
+            $('.inner').prepend($('<li>').text(username + ': ' + value.msg));
+        };
+            
         self.messagesCount++;//increase pagination offset;
 
         $("#messages").scrollTop($("#messages")[0].scrollHeight);//keep scrollbar at bottom 

@@ -3,14 +3,23 @@
   "version": "0.0.1",
   "description": "my first socket.io app",
   "dependencies": {
+    "bcrypt": "^1.0.2",
+    "body-parser": "^1.16.0",
+    "chai": "^3.5.0",
+    "connect-redis": "^3.2.0",
+    "cookie-parser": "^1.4.3",
     "express": "^4.14.1",
-    "socket.io": "^1.7.2",
-    "sequelize": "latest"
+    "express-session": "^1.15.0",
+    "express-socket.io-session": "^1.3.1",
+    "mocha": "^3.2.0",
+    "request": "^2.79.0",
+    "sequelize": "^3.30.1",
+    "socket.io": "^1.7.2"
   },
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "author": "",
   "license": "ISC"
