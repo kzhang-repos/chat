@@ -2,14 +2,11 @@ var Sequelize = require('sequelize');
 
 var db = {};
 
-//one master two slaves. read and write from the master, read from the master and two slaves. 
-//composite key for messages on ChannelId and when the message is created
-
-var sequelize = new Sequelize('chat', null, 'meowmeow', {
+var sequelize = new Sequelize('chat', null, bull, {
     logging: console.log,
     port: 3306,
     dialect: 'mysql',
-    timezone: '-00:00',
+    timezone: '+08:00',
     replication: {
         read: [
                 { host: 'localhost', username: process.env['DB_USERNAME'], password: process.env['DB_PASSWORD']},
@@ -32,8 +29,8 @@ db.Channel = sequelize.import(__dirname + '/models/channel.js');
 db.Message.belongsTo(db.User);
 db.User.hasMany(db.Message);
 
-db.Message.belongsTo(db.Channel, {foreignKey: 'ChannelId'});
-db.Channel.hasMany(db.Message, {foreignKey: 'ChannelId'});
+db.Message.belongsTo(db.Channel);
+db.Channel.hasMany(db.Message);
 
 db.User.belongsToMany(db.Channel, {through: 'UserChannel'});
 db.Channel.belongsToMany(db.User, {through: 'UserChannel'});

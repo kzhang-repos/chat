@@ -49,23 +49,28 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
         .then(function(channel) {
             if (channel.length === 0) {
                 //create a channel if there is not one already createad
-                self.db.Channel.create({
-                }).then(function(channel) {
-                    self.db.User.findById(self.id
-                    ).then(function(user){
-                        user.addChannel(channel);
-                    }).catch(function(err) {
-                        console.log(err);
-                    });
+                //make create channel and add users to channel a transaction
 
-                    self.db.User.findById(data.id
-                    ).then(function(user){
-                        user.addChannel(channel);
-                    }).catch(function(err) {
-                        console.log(err);
+                var channelId; 
+
+                return self.db.sequelize.transaction(function(t) {
+                    return self.db.Channel.create({
+                    }, {transaction: t}).then(function(channel) {
+                        channelId = channel.id;
+                        return Promise.all([
+                            self.db.User.findById(self.id,
+                                {transaction: null}).then(function(user){
+                                    user.addChannel(channel);
+                                }, {transaction: t}),
+                            self.db.User.findById(data.id, 
+                                {transaction: null}).then(function(user){
+                                    user.addChannel(channel);
+                                }, {transaction: t}),
+
+                        ]);
                     });
-                    
-                    self.channel = channel.id;
+                }).then(function() {
+                    self.channel = channelId;
                     self.engine.addChannel({socket: self.socket.id, channel: self.channel});
                 }).catch(function(err) {
                     console.log(err);
@@ -73,9 +78,15 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
             } else {
                 var channelId = channel[0].dataValues.ChannelId;
                 //get chat history for this channel if there is a channel already
+                //do not send password hash to client 
                 self.db.Message.findAll({
                     where: {ChannelId: channelId},
-                    include: [{model: self.db.User, required: true}],
+                    include: [{
+                        model: self.db.User,
+                        attributes: {
+                            exclude: ['password']
+                        }
+                    }],
                     order: [['createdAt', 'DESC']],
                     limit: 10,
                     offset: data.offset
@@ -92,9 +103,15 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
         });
     } else {
         //pagination 
+        //do not send user password to frontend
         self.db.Message.findAll({
             where: {ChannelId: self.channel},
-            include: [{model: self.db.User, required: true}],
+            include: [{
+                        model: self.db.User, 
+                        attributes: {
+                            exclude: ['password']
+                        }
+                    }],
             order: [['createdAt', 'DESC']],
             limit: 10,
             offset: data.offset
@@ -111,30 +128,32 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 Chatter.prototype.onChatMessage = function onChatMessage(data) {
     var self = this;
 
-    self.db.Message.create({
-        msg: data
-    }).then(function(message) {
-        console.log(message.createdAt.toString());
+    //make save message, and add message to user and channel a transaction
+    var message;
+
+    return self.db.sequelize.transaction(function(t) {
+        return self.db.Message.create({
+            msg: data
+            }, {transaction: t}).then(function(res) {
+                message = res;
+                return Promise.all([
+                    self.db.Channel.find({where: {id: self.channel}
+                    }, {transaction: null}).then(function(channel) {
+                        channel.addMessage(res);
+                    }, {transaction: t}),
+                    self.db.User.find({where: {id: self.id}
+                    }, {transaction: null}).then(function(user) {
+                        user.addMessage(res);
+                    }, {transaction: t})
+                ])
+            })
+    }).then(function() {
         var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
 
         self.engine.channelToSockets[self.channel].forEach(function(socket) {
             self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg, time: time});
         });
         self.socket.emit('chatMessage', {username: self.username, msg: message.msg, time: time});
-
-        self.db.Channel.find({where: {id: self.channel}
-        }).then(function(channel) {
-            channel.addMessage(message);
-        }).catch(function(err) {
-            console.log(err);
-        });
-
-        self.db.User.find({where: {id: self.id}
-        }).then(function(user) {
-            user.addMessage(message);
-        }).catch(function(err) {
-            console.log(err);
-        });
     }).catch(function(err) {
         console.log(err);
     });
