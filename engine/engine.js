@@ -34,12 +34,14 @@ Engine.prototype.addChannel = function addChannel(data) {
 Engine.prototype.removeSocket = function removeSocket(data) {
     var self = this;
 
-    if (data.channel && self.channelToSockets && self.channelToSockets[data.channel] !== undefined) {
-        var index = self.channelToSockets[data.channel].indexOf(data.socket);
-        self.channelToSockets[data.channel].splice(index, 1);
-        if (self.channelToSockets[data.channel].length === 0) {
-            delete self.channelToSockets[data.channel];
-        };
+    if (!data.channel || !self.channelToSockets || self.channelToSockets[data.channel] === undefined) {
+        return;
+    };
+
+    var index = self.channelToSockets[data.channel].indexOf(data.socket);
+    self.channelToSockets[data.channel].splice(index, 1);
+    if (self.channelToSockets[data.channel].length === 0) {
+        delete self.channelToSockets[data.channel];
     };
 };
 

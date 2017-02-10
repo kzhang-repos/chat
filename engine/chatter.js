@@ -53,7 +53,7 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 
                 var channelId; 
 
-                return self.db.sequelize.transaction(function(t) {
+                self.db.sequelize.transaction(function(t) {
                     return self.db.Channel.create({
                     }, {transaction: t}).then(function(channel) {
                         channelId = channel.id;
@@ -127,11 +127,17 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 
 Chatter.prototype.onChatMessage = function onChatMessage(data) {
     var self = this;
+    
+    if (!data) return;
+
+    if (!self.channel || !self.engine.channelToSockets || self.engine.channelToSockets[self.channel] === undefined) {
+        return;
+    };
 
     //make save message, and add message to user and channel a transaction
     var message;
 
-    return self.db.sequelize.transaction(function(t) {
+    self.db.sequelize.transaction(function(t) {
         return self.db.Message.create({
             msg: data
             }, {transaction: t}).then(function(res) {
@@ -163,6 +169,10 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
 Chatter.prototype.onTyping = function onTyping() {
     var self = this;
 
+    if (!self.channel || !self.engine.channelToSockets || self.engine.channelToSockets[self.channel] === undefined) {
+        return;
+    };
+
     self.engine.channelToSockets[self.channel].forEach(function(socket) {
         self.socket.broadcast.to(socket).emit('showTyping', self.username);
     });
@@ -171,6 +181,10 @@ Chatter.prototype.onTyping = function onTyping() {
 Chatter.prototype.onDoneTyping = function oneDonTyping() {
     var self = this;
 
+    if (!self.channel || !self.engine.channelToSockets || self.engine.channelToSockets[self.channel] === undefined) {
+        return;
+    };
+    
     self.engine.channelToSockets[self.channel].forEach(function(socket) {
         self.socket.broadcast.to(socket).emit('showDoneTyping');
     });

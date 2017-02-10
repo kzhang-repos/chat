@@ -18,9 +18,16 @@
         },
         {
             "type": "node",
-            "request": "attach",
-            "name": "Attach to Process",
-            "port": 5858
-        }
+            "request": "launch",
+            "name": "Launch Current File",
+            "program": "${file}",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/mocha",
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "DB_USERNAME": "root",
+                "DB_PASSWORD": "meowmeow",
+                "SESSION_SECRET": "secret"
+            }
+        },
     ]
 }
