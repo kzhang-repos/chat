@@ -1,43 +1,37 @@
 var async = require('async'),
     request = require('supertest'),
     should = require('should'),
-    app = require('../index.js'),
-    db = require('../db.js');
+    app = require('../index.js');
  
-describe('Req 1: Landing page functionality', function(){
-  before(function (done) {
-    this.timeout(5000);
-    async.series([
-      function (cb) {
-        db.query('insert into Test '+
-          'value("test","test");',function(err){
-            done();
-          });
-      },
-      function (cb) {
-        db.query('select * from Test where username="test"'+
-          ' and password="test";',function(err,results){
-            results.length.should.not.equal(0);
-            done();
-          });
-      }
-    ], done);
-  });
-  it('1.1 Text of landing page', function(done){
+var Cookies;
+ 
+describe('Functional Test <Sessions>:', function () {
+  it('should create user session for valid user', function (done) {
     request(app)
-      .get('/')
+      .post('/login')
+      .set('Accept','application/json')
+      .send({"username": "kate", "password": "1234"})
+      .expect('Content-Type', /json/)
       .expect(200)
       .end(function (err, res) {
-        res.text.should.include('test');
+        res.body.id.should.equal('1');
+        res.body.email.should.equal('kate');
+        // Save the cookie to use it later to retrieve the session
+        Cookies = res.headers['set-cookie'].pop().split(';')[0];
         done();
       });
   });
-  it('1.2 Link to the login page', function(done){
-    request(app)
-      .get('/')
+
+  it('should get user session for current user', function (done) {
+    var req = request(app).get('/login');
+    // Set cookie to get saved user session
+    req.cookies = Cookies;
+    req.set('Accept','application/json')
+      .expect('Content-Type', /json/)
       .expect(200)
       .end(function (err, res) {
-        res.text.should.include('/login');
+        res.body.id.should.equal('1');
+        res.body.email.should.equal('kate');
         done();
       });
   });

@@ -30,11 +30,14 @@ var engine = new Engine(deps);
 
 app.use(express.static('./public'));
 
-db.sequelize.sync().then(function() {
+db.sequelize.sync(
+).then(function() {
     console.log('db connected')
     http.listen(3000, function(){
         console.log('listening on *:3000');
     });
+}).catch(function(err){
+    console.log(err);
 });
 
 

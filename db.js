@@ -2,7 +2,7 @@ var Sequelize = require('sequelize');
 
 var db = {};
 
-var sequelize = new Sequelize('chat', null, bull, {
+var sequelize = new Sequelize('chat', null, null, {
     logging: console.log,
     port: 3306,
     dialect: 'mysql',
