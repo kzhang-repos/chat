@@ -3,6 +3,7 @@
 This API uses an authenticated socket.io connection to support one to one chat between online users.
 
 1. Endpoints
+2. 
 
 Once the server is run, it will create an instance of socket.io.
 When the user creates a user account via /register, the server will verify whether the username and password is valid per the DB model specification.
