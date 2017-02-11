@@ -32,7 +32,7 @@ App.prototype.setupUI = function() {
 
         var chosenId = $(this).attr('id');
         //get chat history with the chosen user
-        self.socket.emit('getChatHistory', {offset: self.messagesCount, id: parseInt(chosenId), pagination: false});
+        self.socket.emit('chatHistory', {offset: self.messagesCount, id: parseInt(chosenId), pagination: false});
         return false;
     });
 
@@ -41,7 +41,7 @@ App.prototype.setupUI = function() {
     $("#messages").scroll(function() {
         var div = $(this);
         if (div.scrollTop() == 0) {
-            self.socket.emit('getChatHistory', {offset: self.messagesCount, pagination: true});
+            self.socket.emit('chatHistory', {offset: self.messagesCount, pagination: true});
         }
     });
 
@@ -75,8 +75,8 @@ App.prototype.attachSocket = function attachSocket() {
     self.socket.on('updateUsers', self.onUpdateUsers.bind(self));
     self.socket.on('chatHistory', self.onChatHistory.bind(self));
     self.socket.on('chatMessage', self.onChatMessage.bind(self));
-    self.socket.on('showTyping', self.onShowTyping.bind(self));
-    self.socket.on('showDoneTyping', self.onShowDoneTyping.bind(self));
+    self.socket.on('typing', self.onTyping.bind(self));
+    self.socket.on('doneTyping', self.onDoneTyping.bind(self));
 };
 
 //save user username
@@ -125,7 +125,12 @@ App.prototype.onChatHistory = function onChatHistory(messages) {
 App.prototype.onChatMessage = function onChatMessage(data) {
     var self = this; 
 
-    $('.inner').append($('<li>').text(data.username + ': ' + data.msg + ' (' + data.time + ')'));
+    var date = new Date();
+    var hours = (date.getHours() < 10 ? '0' : '') + date.getHours();
+    var minutes = (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
+    var time = hours + ':' + minutes;
+
+    $('.inner').append($('<li>').text(data.username + ': ' + data.msg + ' (' + time + ')'));
 
     self.messagesCount++;//pagination offset;
 
@@ -134,12 +139,12 @@ App.prototype.onChatMessage = function onChatMessage(data) {
 
 //show whether someone in the channel is typing
 
-App.prototype.onShowTyping = function onShowTyping(username) {
+App.prototype.onTyping = function onTyping(data) {
     $('#typingStatus').empty();
-    $('#typingStatus').append(username + ' is typing ...');
+    $('#typingStatus').append(data);
 };
 
-App.prototype.onShowDoneTyping = function onShowDoneTyping() {
+App.prototype.onDoneTyping = function onDoneTyping() {
     $('#typingStatus').empty();
 };
 

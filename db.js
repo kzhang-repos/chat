@@ -6,7 +6,7 @@ var sequelize = new Sequelize('chat', null, null, {
     logging: console.log,
     port: 3306,
     dialect: 'mysql',
-    timezone: '+08:00',
+    timezone: '-08:00',
     replication: {
         read: [
                 { host: 'localhost', username: process.env['DB_USERNAME'], password: process.env['DB_PASSWORD']},

@@ -23,7 +23,7 @@ Chatter.prototype.init = function init() {
     }).then(function() {
         self.engine.addUser({username: self.username, id: self.id});
 
-        self.socket.on('getChatHistory', self.onGetChatHistory.bind(self));
+        self.socket.on('chatHistory', self.onChatHistory.bind(self));
         self.socket.on('chatMessage', self.onChatMessage.bind(self));
         self.socket.on('typing', self.onTyping.bind(self));
         self.socket.on('doneTyping', self.onDoneTyping.bind(self));
@@ -34,7 +34,7 @@ Chatter.prototype.init = function init() {
 };
 
 //get chat history for person chosen
-Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
+Chatter.prototype.onChatHistory = function onChatHistory(data) {
     var self = this;
 
     if (!data.pagination) {
@@ -127,7 +127,7 @@ Chatter.prototype.onGetChatHistory = function onGetChatHistory(data) {
 
 Chatter.prototype.onChatMessage = function onChatMessage(data) {
     var self = this;
-    
+
     if (!data) return;
 
     if (!self.channel || !self.engine.channelToSockets || self.engine.channelToSockets[self.channel] === undefined) {
@@ -154,12 +154,10 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
                 ])
             })
     }).then(function() {
-        var time = message.createdAt.toString().substring(16, 21) + ' ' + message.createdAt.toString().substring(4, 10);
-
         self.engine.channelToSockets[self.channel].forEach(function(socket) {
-            self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg, time: time});
+            self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg});
         });
-        self.socket.emit('chatMessage', {username: self.username, msg: message.msg, time: time});
+        self.socket.emit('chatMessage', {username: self.username, msg: message.msg});
     }).catch(function(err) {
         console.log(err);
     });
@@ -174,7 +172,7 @@ Chatter.prototype.onTyping = function onTyping() {
     };
 
     self.engine.channelToSockets[self.channel].forEach(function(socket) {
-        self.socket.broadcast.to(socket).emit('showTyping', self.username);
+        self.socket.broadcast.to(socket).emit('typing', self.username + ' is typing ...');
     });
 };
 
@@ -186,7 +184,7 @@ Chatter.prototype.onDoneTyping = function oneDonTyping() {
     };
     
     self.engine.channelToSockets[self.channel].forEach(function(socket) {
-        self.socket.broadcast.to(socket).emit('showDoneTyping');
+        self.socket.broadcast.to(socket).emit('doneTyping');
     });
 };
 
