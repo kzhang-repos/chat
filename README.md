@@ -3,7 +3,6 @@
 This API uses an authenticated socket.io connection to support one to one chat between online users.
 
 1. Endpoints
-2. 
 
 Once the server is run, it will create an instance of socket.io.
 When the user creates a user account via /register, the server will verify whether the username and password is valid per the DB model specification.
@@ -16,7 +15,7 @@ When the user is redirected to the socket io page, the server will creates an in
 
 Everytime a new socket is connected or disconnected, the Engine class will create a new updated list of all socket's usernames and send it to all sockets and emit the event 'updateUsers'.
 
-3. Chat history 
+3. Chat history
 
 Once the user clicks an online user button, the client will trigger an event 'chatHistory'.
 Upon receiving 'chatHistory', the server will search the database to verify if there is a channel already established between the user and the chosen user.
