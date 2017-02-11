@@ -47,7 +47,6 @@ node.js
 Redis
 MySQL
 socket.io
-Spell check (I'm a fob :D)
 
 Testing frameworks:
 Mocha
