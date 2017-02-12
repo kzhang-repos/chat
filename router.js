@@ -23,10 +23,10 @@ Router.prototype.requireLogin = function requireLogin(req, res, next) {
         }).then(function(user) {
             return next();
         }, function(err) {
-            return res.json('unauthorized access');
+            res.redirect('/login');
         });
     } else {
-        return res.json('unauthorized access');
+        res.redirect('/login');
     }
 };
 
