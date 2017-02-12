@@ -13,7 +13,8 @@
             "env": {
                 "DB_URL": "mysql://root:meowmeow@localhost/chat",
                 "SESSION_SECRET": "secret",
-                "NODE_ENV": "development"
+                "NODE_ENV": "development",
+                "REDIS_URL": "redis://localhost"
             }
         },
         {

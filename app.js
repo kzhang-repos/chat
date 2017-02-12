@@ -1,4 +1,7 @@
 module.exports = function createApp() {
+    var Config = require('./config');
+    var config = new Config();
+    
     var express = require('express');
     var app = express();
 
@@ -9,10 +12,13 @@ module.exports = function createApp() {
     var bodyParser = require('body-parser')();
     var cookieParser = require('cookie-parser')();
     var RedisStore = require('connect-redis')(session);
-    var sessionMiddleware = session({secret: process.env['SESSION_SECRET'], store: new RedisStore({})});
+    var sessionMiddleware = session({
+        secret: config.get('session.secret'),
+        store: new RedisStore({
+            url: config.get('redis.url')
+        })
+    });
 
-    var Config = require('./config');
-    var config = new Config();
 
     app.set('port', config.get('port'));
 

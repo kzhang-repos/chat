@@ -3,5 +3,11 @@
         "url": "$DB_URL",
         "timezone": "-08:00"
     },
-    "port": 3000
+    "redis": {
+        "url": "$REDIS_URL"
+    },
+    "port": 3000,
+    "session": {
+        "secret": "$SESSION_SECRET"
+    }
 }
