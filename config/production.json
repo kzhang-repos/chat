@@ -2,5 +2,8 @@
     "db": {
         "url": "$DATABASE_URL"
     },
+    "redis": {
+        "url": "$REDIS_URL"
+    },
     "port": "$PORT"
 }
