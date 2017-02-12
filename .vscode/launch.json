@@ -11,8 +11,7 @@
             "program": "${workspaceRoot}/index.js",
             "cwd": "${workspaceRoot}",
             "env": {
-                "DB_USERNAME": "root",
-                "DB_PASSWORD": "meowmeow",
+                "DB_URL": "mysql://root:meowmeow@localhost/chat",
                 "SESSION_SECRET": "secret"
             }
         },
@@ -28,6 +27,6 @@
                 "DB_PASSWORD": "meowmeow",
                 "SESSION_SECRET": "secret"
             }
-        },
+        }
     ]
 }

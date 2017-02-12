@@ -1,0 +1,8 @@
+{
+    "db": {
+        "url": "postgres://bjuxtnqlaeccjw:01c55c808fdde8ede5bc6f1f8ada7bc108eff21953bd031eaad0acabdcacd6b5@ec2-54-235-120-39.compute-1.amazonaws.com:5432/dcrtk1lfp7rkok",
+        "dialect": "postgres",
+        "protocol": "postgres",
+        "logging": true
+    }
+}

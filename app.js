@@ -11,11 +11,16 @@ module.exports = function createApp() {
     var RedisStore = require('connect-redis')(session);
     var sessionMiddleware = session({secret: process.env['SESSION_SECRET'], store: new RedisStore({})});
 
+    app.set('port', process.env.PORT || 3000);
 
     app.use(bodyParser);
     app.use(cookieParser);
     app.use(sessionMiddleware);
 
+    if ('development' === app.get('env')) {
+        app.use(express.errorHandler());
+    };
+    
     io.use(function(socket, next) {
         sessionMiddleware(socket.request, socket.request.res, next);
     });
@@ -36,7 +41,7 @@ module.exports = function createApp() {
     db.sequelize.sync(
     ).then(function() {
         console.log('db connected')
-        http.listen(3000, function(){
+        http.listen(app.get('port'), function(){
             console.log('listening on *:3000');
         });
     }).catch(function(err){
