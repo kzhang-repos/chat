@@ -12,7 +12,8 @@
             "cwd": "${workspaceRoot}",
             "env": {
                 "DB_URL": "mysql://root:meowmeow@localhost/chat",
-                "SESSION_SECRET": "secret"
+                "SESSION_SECRET": "secret",
+                "NODE_ENV": "development"
             }
         },
         {

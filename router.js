@@ -61,7 +61,7 @@ Router.prototype.auth = function auth(req, res) {
         } else {
             user.authenticate(req.body.password, function(err, isValid) {
                 if (err) res.json('wrong password');
-                else {
+                else {  
                     req.session.username = user.username;
                     res.redirect('/');
                 }

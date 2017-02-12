@@ -8,6 +8,7 @@
     "chai": "^3.5.0",
     "connect-redis": "^3.2.0",
     "cookie-parser": "^1.4.3",
+    "errorhandler": "^1.5.0",
     "expect.js": "^0.3.1",
     "express": "^4.14.1",
     "express-session": "^1.15.0",
