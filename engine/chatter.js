@@ -71,6 +71,7 @@ Chatter.prototype.onChatHistory = function onChatHistory(data) {
                     });
                 }).then(function() {
                     self.channel = channelId;
+                    console.log(self.channel);
                     self.engine.addChannel({socket: self.socket.id, channel: self.channel});
                 }).catch(function(err) {
                     console.log(err);
@@ -92,6 +93,7 @@ Chatter.prototype.onChatHistory = function onChatHistory(data) {
                     offset: data.offset
                 }).then(function(messages) {
                     self.channel = channelId;
+                    console.log(self.channel);
                     self.engine.addChannel({socket: self.socket.id, channel: channelId});
                     self.socket.emit('chatHistory', messages);
                 }).catch(function(err) {
