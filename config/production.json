@@ -1,6 +1,6 @@
 {
     "db": {
-        "url": "$DATABASE_URL"
+        "url": "$JAWSDB_URL"
     },
     "redis": {
         "url": "$REDIS_URL"
