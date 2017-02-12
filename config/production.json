@@ -5,5 +5,8 @@
     "redis": {
         "url": "$REDIS_URL"
     },
-    "port": "$PORT"
+    "port": "$PORT",
+    "session": {
+        "secret": "$SESSION_SECRET"
+    }
 }
