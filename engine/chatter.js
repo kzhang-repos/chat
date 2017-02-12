@@ -53,7 +53,7 @@ Chatter.prototype.onChatHistory = function onChatHistory(data) {
 
                 var channelId; 
 
-                self.db.sequelize.transaction(function(t) {
+                return self.db.sequelize.transaction(function(t) {
                     return self.db.Channel.create({
                     }, {transaction: t}).then(function(channel) {
                         channelId = channel.id;
@@ -79,7 +79,7 @@ Chatter.prototype.onChatHistory = function onChatHistory(data) {
                 var channelId = channel[0].dataValues.ChannelId;
                 //get chat history for this channel if there is a channel already
                 //do not send password hash to client 
-                self.db.Message.findAll({
+                return self.db.Message.findAll({
                     where: {ChannelId: channelId},
                     include: [{
                         model: self.db.User,
@@ -135,29 +135,27 @@ Chatter.prototype.onChatMessage = function onChatMessage(data) {
     };
 
     //make save message, and add message to user and channel a transaction
-    var message;
 
     self.db.sequelize.transaction(function(t) {
         return self.db.Message.create({
             msg: data
-            }, {transaction: t}).then(function(res) {
-                message = res;
+            }, {transaction: t}).then(function(message) {
                 return Promise.all([
                     self.db.Channel.find({where: {id: self.channel}
                     }, {transaction: null}).then(function(channel) {
-                        channel.addMessage(res);
+                        channel.addMessage(message);
                     }, {transaction: t}),
                     self.db.User.find({where: {id: self.id}
                     }, {transaction: null}).then(function(user) {
-                        user.addMessage(res);
+                        user.addMessage(message);
                     }, {transaction: t})
                 ])
             })
     }).then(function() {
         self.engine.channelToSockets[self.channel].forEach(function(socket) {
-            self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: message.msg});
+            self.socket.broadcast.to(socket).emit('chatMessage', {username: self.username, msg: data});
         });
-        self.socket.emit('chatMessage', {username: self.username, msg: message.msg});
+        self.socket.emit('chatMessage', {username: self.username, msg: data});
     }).catch(function(err) {
         console.log(err);
     });

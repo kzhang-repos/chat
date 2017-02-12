@@ -11,7 +11,7 @@
             "program": "${workspaceRoot}/index.js",
             "cwd": "${workspaceRoot}",
             "env": {
-                "NODE_ENV": "production",
+                "NODE_ENV": "development",
                 "DB_URL": "mysql://root:meowmeow@localhost/chat",
                 "REDIS_URL": "redis://localhost",
                 "SESSION_SECRET": "secret"

@@ -112,7 +112,10 @@ App.prototype.onChatHistory = function onChatHistory(messages) {
     $.each(messages, function(key, value) {
 
         var username = value.User['username'];
-        var time = value.createdAt.toString().substring(11, 16) + ' ' + value.createdAt.toString().substring(5, 10);
+
+        var convertedTime = moment.tz(value.createdAt.toString(), moment.tz.guess()).format(); 
+        var time = convertedTime.substring(11, 16) + ' ' + convertedTime.substring(5, 10);
+
         $('.inner').prepend($('<li>').text(username + ': ' + value.msg + ' (' + time + ')'));
             
         self.messagesCount++;//increase pagination offset;
