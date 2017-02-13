@@ -32,7 +32,7 @@ App.prototype.setupUI = function() {
 
         var chosenId = $(this).attr('id');
         //get chat history with the chosen user
-        self.socket.emit('chatHistory', {offset: self.messagesCount, id: parseInt(chosenId), pagination: false});
+        self.socket.emit('chatHistory', {offset: 0, id: parseInt(chosenId), pagination: false});
         return false;
     });
 

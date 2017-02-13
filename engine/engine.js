@@ -6,10 +6,11 @@ function Engine(deps) {
     self.db = deps.db;
     self.io = deps.io;
 
-    // maintain list of online users 
+    // maintain a list of the number of sockets each user has open
     self.usernames = {};
+    //maintain a list of username to id 
     self.usernameToId= {};
-    //maintain list of sockets in a channel
+    //maintain a list of sockets in a channel
     self.channelToSockets = {};
     
     self.io.sockets.on('connection', self.addChatter.bind(self));

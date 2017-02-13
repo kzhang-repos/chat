@@ -9,7 +9,7 @@ var Config = function (){
 
 Config.prototype.merge = function merge() {
     var file = this.file;
-    this.parsing(file);    
+    this.parse(file);    
 
     var res = this.base;
 
@@ -20,7 +20,7 @@ Config.prototype.merge = function merge() {
     this.merged = res;
 };
 
-Config.prototype.parsing = function parsing(current) {
+Config.prototype.parse = function parse(current) {
     for (var key in current) {
         if (typeof current[key] === 'string') {
             if (current[key][0] === '$') {
@@ -28,7 +28,7 @@ Config.prototype.parsing = function parsing(current) {
                 current[key] = process.env[newKey];
             }; 
         } else {
-            this.parsing(current[key]);
+            this.parse(current[key]);
         };
     };
     return;
@@ -47,7 +47,7 @@ Config.prototype.get = function get(key) {
     }  
 
     if (i === arr.length - 1) {
-        return false;
+        return undefined;
     } else {
         return res;
     };
