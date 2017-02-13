@@ -11,15 +11,15 @@ The user will then be redirected to the io page.
 
 **Socket connections**
 
-When a user is redirected to the socket io page, the server will creates an instance of the chatter (which belongs to the class Engine).
+When the user is redirected to the socket io page, the server will creates an instance of the chatter (which belongs to the class Engine).
 
-Everytime a new socket is connected or disconnected, the Engine class will create a new updated list of all socket's usernames and send it to all sockets and emit the event 'updateUsers'.
+Everytime a new socket is connected or disconnected, the Engine class will update the list of all online users' usernames. It will then send the list to all sockets and emit the event 'updateUsers'.
 
 **Chat history**
 
 Once the user clicks an online user's username button, the client will trigger an event 'chatHistory'.
 Upon receiving 'chatHistory', the server will search the database to verify if there is a channel already established between the user and the chosen user.
-If there is a channel already, the server will retrieve the most recent 10 messages in chronological order and send it back to the client.
+If there is a channel already, the server will retrieve the most recent 10 messages in chronological order and send them back to the client.
 If there is not one, the server will create a channel for these users.
 
 If the user scrolls to the top of the chat message window, the client will emit "chatHistory" to the server, which will retrieve 10 older messages and emit them back to the client with the event 'chatHistory'.
@@ -31,7 +31,7 @@ Upon receiveing the 'chatMessage' event, the client will display the message on 
 
 **Typing notification**
 
-Upon 'keyup' of the input box in the 'conversion' form, the client will emit an event 'typing' to the server, which will in turn emit the event 'typing' along with the socket's username to the other socket in the channel.
+Upon 'keyup' of the input box in the 'conversation' form, the client will emit an event 'typing' to the server, which will in turn emit the event 'typing' along with the socket's username to the other socket in the channel.
 If the user has not typed for more than 2 seconds, the client will emit an event 'doneTyping' to the server, which will in turn emit the event 'doneTyping' to the other socket in the channel.
 
 **Potential extensions**
