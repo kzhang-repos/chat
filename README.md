@@ -24,8 +24,6 @@ If there is not one, the server will create a channel for these users.
 
 If the user scrolls to the top of the chat message window, the client will trigger an event "chatHistory" and send the offset for pagination purpose to the server, which will retrieve 10 older messages and emit it back to the client with the event 'chatHistory'.
 
-very message being sent to the client, either through 'chatHistory' or 'chatMessage', will increase the counter for offset for pagination purposes. 
-
 **Chat message**
 
 If the 'conversation' form is submitted, the client will emit a 'chatMessage' event to the server and sends the message entered along. If the message entered is not null, the server will emit 'chatMessage' event and send the message to all sockets in the channel. 
