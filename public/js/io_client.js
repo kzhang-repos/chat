@@ -1,6 +1,6 @@
 function App(deps) {
     this.username = null;
-    this.messagesCount = 0;
+    this.messagesCount = 0;//used to keep track of offset for pagination purposes
 
     this.socket = deps.socket;
 };
