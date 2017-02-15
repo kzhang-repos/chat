@@ -8,8 +8,6 @@ function Engine(deps) {
 
     // maintain a list of the number of sockets each user has open
     self.usernames = {};
-    //maintain a list of username to id 
-    self.usernameToId= {};
     //maintain a list of sockets in a channel
     self.channelToSockets = {};
     
@@ -52,8 +50,7 @@ Engine.prototype.addUser = function addUser(data) {
     self.usernames[data.username] = self.usernames[data.username] || 0;
     self.usernames[data.username]++;
 
-    self.usernameToId[data.username] = data.id;
-    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernames), usernameToId: self.usernameToId});
+    self.io.sockets.emit('updateUsers', Object.keys(self.usernames));
 };
 
 Engine.prototype.removeUser = function removeUser(username) {
@@ -61,10 +58,9 @@ Engine.prototype.removeUser = function removeUser(username) {
     self.usernames[username]--;
     if (self.usernames[username] === 0) {
         delete self.usernames[username];
-        delete self.usernameToId[username];
     };
     
-    self.io.sockets.emit('updateUsers', {usernames: Object.keys(self.usernames), usernameToId: self.usernameToId});
+    self.io.sockets.emit('updateUsers', Object.keys(self.usernames));
 };
 
 module.exports = Engine;

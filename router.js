@@ -14,6 +14,8 @@ Router.prototype.routing = function routing() {
     self.app.get('/', self.requireLogin.bind(self));
 };
 
+//session middleware
+
 Router.prototype.requireLogin = function requireLogin(req, res, next) {
     var self = this;
 
@@ -30,6 +32,8 @@ Router.prototype.requireLogin = function requireLogin(req, res, next) {
     }
 };
 
+//register
+
 Router.prototype.reg = function reg(req, res) {
     var self = this;
     
@@ -40,15 +44,17 @@ Router.prototype.reg = function reg(req, res) {
         if(user) {
             req.session.username = user.username;
         }
-        else res.json('user info cannot be saved to DB');
+        else res.redirect('/register');
     }).then(function() {
         res.redirect('/'); 
     })
     .catch(function(err) {
         console.log(err);
-        res.json('registration failed');
+        res.redirect('/register'); 
     });
 };
+
+//login
 
 Router.prototype.auth = function auth(req, res) {
     var self = this;

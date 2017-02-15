@@ -11,14 +11,15 @@
             "program": "${workspaceRoot}/index.js",
             "cwd": "${workspaceRoot}",
             "env": {
-                "NODE_ENV": "development",
-                "DB_URL": "mysql://root:meowmeow@localhost/chat",
-                "REDIS_URL": "redis://localhost",
-                "SESSION_SECRET": "secret"
-                // "REDIS_URL": "redis://h:p9e1981ddf9da6af95e4af15d5a90ece0774f5bdeed40f8cb14749c8aa7c71f7a@ec2-34-194-51-203.compute-1.amazonaws.com:16109",
-                // "SESSION_SECRET": "Es2s3rE*9G@zpURT'P|L+h0406q2y|",
-                // "JAWSDB_URL": "mysql://dgwst1xzo8g60au5:m3y58n73x6uwi042@alv4v3hlsipxnujn.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zq7zwo5gxer14atb",
-                // "PORT": "3000"
+                "NODE_ENV": "production",
+                // "DB_URL": "mysql://root:meowmeow@localhost/chat",
+                // "REDIS_URL": "redis://localhost",
+                // "SESSION_SECRET": "secret",
+                // "DEBUG": "*"
+                "REDIS_URL": "redis://h:p9e1981ddf9da6af95e4af15d5a90ece0774f5bdeed40f8cb14749c8aa7c71f7a@ec2-34-194-51-203.compute-1.amazonaws.com:16109",
+                "SESSION_SECRET": "Es2s3rE*9G@zpURT'P|L+h0406q2y|",
+                "JAWSDB_URL": "mysql://dgwst1xzo8g60au5:m3y58n73x6uwi042@alv4v3hlsipxnujn.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zq7zwo5gxer14atb",
+                "PORT": "3000"
             }
         },
         {

@@ -19,7 +19,19 @@ Chatter.prototype.init = function init() {
         where: {username: self.username}
     }).then(function(user) {
         self.id = user.id;
-        self.socket.emit('storeUsername', self.username);
+
+        //send all users to UI
+        self.db.User.findAll({
+        }).then(function(users) {
+            var userList = [];
+            users.forEach(function(user) {
+                userList.push({id: user.id, username: user.username});
+            });
+            self.socket.emit('storeUsername', {username: self.username, userList: userList});
+            self.socket.emit('updateUsers', Object.keys(self.engine.usernames));
+        }).catch(function(err) {
+            console.log(err);
+        }); 
     }).then(function() {
         self.engine.addUser({username: self.username, id: self.id});
 

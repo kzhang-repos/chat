@@ -23,7 +23,7 @@ App.prototype.setupUI = function() {
     if(isScrolledToBottom)
         out.scrollTop = out.scrollHeight - out.clientHeight;
 
-    //choose an active user to chat with. can only pick once.
+    //choose an user to chat with. can only pick once.
 
     $(document).one('click', '.buttons', function(){
         $('#messages').show();//unhide message box
@@ -81,27 +81,35 @@ App.prototype.attachSocket = function attachSocket() {
 
 //save user username
 
-App.prototype.onStoreUsername = function onStoreUsername(username) {
+App.prototype.onStoreUsername = function onStoreUsername(data) {
     var self = this;
 
-    self.username = username;
+    self.username = data.username;
     $('#welcome').empty();
     $('#welcome').append('<b>Welcome ' + self.username + '</b>');
+
+     $('#users').empty();
+     $.each(data.userList, function(key, value) {
+         if (value.username !== self.username) {
+               $('#users').append('<button class = "buttons" value = ' + value.username + ' id = ' + value.id + '>' + value.username + '</button><br>');
+          };
+     });
 };
 
 //update active users everytime a new connection is established
 
-App.prototype.onUpdateUsers = function onUpdateUsers(data) {
+App.prototype.onUpdateUsers = function onUpdateUsers(usernames) {
     var self = this;
 
-     $('#users').empty();
-     $.each(data.usernames, function(key, value) {		      
-          if (value !== self.username) {
-               $('#users').append('<button class = "buttons" id = ' + data.usernameToId[value]+ '>' + value + '</button><br>');
-          } else {
-               $('#users').append('<button class = "buttons" disabled = true>' + value + '</button><br>');
-          };
-     });
+    $('.buttons').each(function() {
+        var username = $(this).val();
+        var id = $(this).attr('id');
+        if (usernames.indexOf(username) !== -1) {
+            $(this).append(' (online)');
+        } else {
+            $(this).replaceWith('<button class = "buttons" value = ' + username + ' id = ' + id + '>' + username + '</button>');
+        }
+    });
 };
 
 //show chat history with the chosen user or after scrolling to top
