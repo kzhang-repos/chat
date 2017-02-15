@@ -1,6 +1,6 @@
 # Summary
 
-Chat app uses an authenticated socket.io connection to support one to one chat between online users.
+Chat app uses an authenticated socket.io connection to support one to one chat.
 
 **Endpoints**
 
@@ -12,12 +12,12 @@ The user will then be redirected to the io page.
 **Socket connections**
 
 When the user is redirected to the socket io page, the server will creates an instance of the chatter (which belongs to the class Engine).
-
-Everytime a new socket is connected or disconnected, the Engine class will update the list of all online users' usernames. It will then send the list to all sockets and emit the event 'updateUsers'.
+Once the user is connected, the server will send a list of all users' usernames to the client.
+Everytime a new socket is connected or disconnected, the Engine class will update the list of all online users' usernames. It will then send the list to all sockets and emit the event 'updateUsers'. The client will indicate which user is online.
 
 **Chat history**
 
-Once the user clicks an online user's username button, the client will trigger an event 'chatHistory'.
+Once the user clicks an user's username button, the client will trigger an event 'chatHistory'.
 Upon receiving 'chatHistory', the server will search the database to verify if there is a channel already established between the user and the chosen user.
 If there is a channel already, the server will retrieve the most recent 10 messages in chronological order and send them back to the client.
 If there is not one, the server will create a channel for these users.
@@ -36,7 +36,7 @@ If the user has not typed for more than 2 seconds, the client will emit an event
 
 **Potential extensions**
 
-Though this app only allows one to one chat between online users, it can be easily extended to support group chat and offline messaging.
+Though this app only allows one to one chat, it can be easily extended to support group chat.
 Additionally, this app only works on a single server. However, it can run multiple socket.io instances in different processes or servers by using the socket.io-redis adapter.
 
 # Technologies

@@ -25,12 +25,31 @@ App.prototype.setupUI = function() {
 
     //choose an user to chat with. can only pick once.
 
-    $(document).one('click', '.buttons', function(){
+    $(document).on('click', '.buttons', function(){
+        var jqSelf = this;
+
+        $('.inner').empty();
+        $('#messages').show();//unhide message box
+
+        var resetMessagesCount = false;
+
+        //make sure another button is unchecked 
+        $('.buttons').each(function() {
+            if ($(this).css('font-weight') === 'bold') {
+                $(this).css('font-weight', 'normal');
+                resetMessagesCount = true;
+            };
+        });
+
+        if (resetMessagesCount) {
+            self.messagesCount = 0;
+        };
+
         $('#messages').show();//unhide message box
        
-        $(this).css('font-weight', 'bold');
+        $(jqSelf).css('font-weight', 'bold');
 
-        var chosenId = $(this).attr('id');
+        var chosenId = $(jqSelf).attr('id');
         //get chat history with the chosen user
         self.socket.emit('chatHistory', {offset: 0, id: parseInt(chosenId), pagination: false});
         return false;
@@ -66,6 +85,10 @@ App.prototype.setupUI = function() {
             delete receiver;
         }, time);
     });
+};
+
+App.prototype.newChat = function newChat() {
+
 };
 
 App.prototype.attachSocket = function attachSocket() {
