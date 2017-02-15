@@ -36,8 +36,7 @@ If the user has not typed for more than 2 seconds, the client will emit an event
 
 **Potential extensions**
 
-Though this app only allows one to one chat, it can be easily extended to support group chat.
-Additionally, this app only works on a single server. However, it can run multiple socket.io instances in different processes or servers by using the socket.io-redis adapter.
+This app can be easily extended to support group chat, and run multiple socket.io instances in different processes or servers by using the socket.io-redis adapter.
 
 # Technologies
 
